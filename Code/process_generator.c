@@ -1,4 +1,11 @@
 #include "headers.h"
+#include "priority_queue.h"
+
+struct msgbuff
+{
+    long mtype;
+    struct Process P;
+};
 
 void clearResources(int);
 
