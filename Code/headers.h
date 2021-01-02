@@ -1,4 +1,5 @@
 #include <stdio.h>      //if you don't use scanf/printf change this include
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
