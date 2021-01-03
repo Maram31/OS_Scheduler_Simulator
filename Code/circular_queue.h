@@ -28,11 +28,11 @@ struct Node {
 struct LinkedList {
 	struct Node * head;
 	struct Node * tail;
-    int size = 0;
+    int size;
 };
 
 
-void insert(struct LinkedList* ProcessesList, struct processData newProcess) {
+void insertToQueue(struct LinkedList* ProcessesList, struct processData newProcess) {
         
     struct Node * newProcessNode;
     newProcessNode = (struct Node*)malloc(sizeof(struct Node));
@@ -56,7 +56,7 @@ void insert(struct LinkedList* ProcessesList, struct processData newProcess) {
  };
 
 
-void remove(struct LinkedList * L, int id) {
+void removeFromQueue(struct LinkedList * L, int id) {
     struct Node* currentNode = L->head; //Set the current node to the list head
 
     while (currentNode != NULL) //Loop as long as node is not null
@@ -79,7 +79,7 @@ void remove(struct LinkedList * L, int id) {
                 
             }
             
-            realloc(currentNode, 0); //Deallocate removed node
+            free(currentNode); //Deallocate removed node
             return;
         }
 
