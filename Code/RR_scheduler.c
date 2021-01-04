@@ -63,8 +63,8 @@ int main(int argc, char * argv[])
         
         if(x >= current_node ->processInfo.arrivaltime && current_node != NULL)
         {
-            printf("current time is %d\n", x);
-            printf("Id: %d\n",current_node->processInfo.id);
+            //printf("current time is %d\n", x);
+            //printf("Id: %d\n",current_node->processInfo.id);
             //sleep(1);
             insertToQueue(&ready_queue, current_node->processInfo);
             current_node = current_node->next;
@@ -84,12 +84,14 @@ int main(int argc, char * argv[])
 
             pid=fork();
             if(pid == 0){
-                printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
+                //printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
                 char id_param [MAXCHAR] ; 
                 sprintf(id_param, "%d", previous_head -> processInfo.id);
-                char remaining_time_param [MAXCHAR];
-                sprintf(remaining_time_param, "%d", previous_head -> processInfo.runningtime);
-                return execl("./process.out", "./process.out", id_param, remaining_time_param,(char*)NULL);
+                char running_time_param [MAXCHAR];
+                sprintf(running_time_param, "%d", previous_head -> processInfo.runningtime);
+                char arrival_time_param [MAXCHAR];
+                sprintf(arrival_time_param, "%d", previous_head -> processInfo.arrivaltime);
+                return execl("./process.out", "./process.out", id_param, arrival_time_param, running_time_param,(char*)NULL);
             }
             else if(pid == -1)
             {
