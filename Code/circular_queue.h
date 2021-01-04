@@ -79,7 +79,8 @@ void removeFromQueue(struct LinkedList * L, int id) {
                 
             }
             
-            free(currentNode); //Deallocate removed node
+            //free(currentNode); //Deallocate removed node
+            L->size--;
             return;
         }
 

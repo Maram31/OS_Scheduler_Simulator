@@ -12,5 +12,5 @@ clean:
 all: clean build
 
 run:
-	./RR_scheduler.out
+	./process_generator.out
 

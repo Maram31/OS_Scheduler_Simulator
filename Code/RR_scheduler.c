@@ -19,11 +19,17 @@ int main(int argc, char * argv[])
 {
 
     struct LinkedList processes = {NULL, NULL, 0};
-    struct LinkedList queue = {NULL, NULL, 0};
+    struct LinkedList ready_queue = {NULL, NULL, 0};
+    struct LinkedList running_queue = {NULL, NULL, 0};
     readFromFileAndFillList(&processes);
 
+    int time_quantum;
     
+    //temp value
+    time_quantum = 2;
+
     // 3. Initiate and create the scheduler and clock processes.
+    /*
     pid_t pid=fork();
     if(pid == 0){
         printf("\nClock Initialization Succes\n"); 
@@ -33,48 +39,88 @@ int main(int argc, char * argv[])
     {
         printf("\nClock Initialization Error\n");
         exit(-1); 
-    }
+    }*/
     
 
     // 4. Use this function after creating the clock process to initialize clock
     initClk();
     // To get time use this
     int x = getClk();
-    sleep(1);
-    printf("current time is %d\n", x);
+    printf("RR current time is %d\n", x);
+    //sleep(1);
+    //printf("current time is %d\n", x);
     // TODO Generation Main Loop
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
     struct Node* current_node = processes.head;
+    struct Node * previous_head = NULL;
+    struct Node * current_head = NULL;
+    pid_t pid;
+    int prev_start = -1;
     while (1)
     {
-        x = getClk();
+        
         
         if(x >= current_node ->processInfo.arrivaltime && current_node != NULL)
         {
             printf("current time is %d\n", x);
             printf("Id: %d\n",current_node->processInfo.id);
             //sleep(1);
-            insertToQueue(&queue, current_node->processInfo);
+            insertToQueue(&ready_queue, current_node->processInfo);
             current_node = current_node->next;
 
         }
 
-        /* Debug
+        
+        current_head = ready_queue.head;
+
+        if(current_head != NULL) // && (prev_start == -1 || x - prev_start >= time_quantum))
+        {
+            prev_start = x;
+            removeFromQueue(&ready_queue, current_head->processInfo.id );
+            insertToQueue(&running_queue, current_head->processInfo);
+            previous_head = current_head;
+            current_head = ready_queue.head;
+
+            pid=fork();
+            if(pid == 0){
+                printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
+                char id_param [MAXCHAR] ; 
+                sprintf(id_param, "%d", previous_head -> processInfo.id);
+                char remaining_time_param [MAXCHAR];
+                sprintf(remaining_time_param, "%d", previous_head -> processInfo.runningtime);
+                return execl("./process.out", "./process.out", id_param, remaining_time_param,(char*)NULL);
+            }
+            else if(pid == -1)
+            {
+                printf("\nClock Initialization Error\n");
+                exit(-1); 
+            }
+            else
+            {
+                
+            }
+
+        }
+
+        /*
+        //Debug
         if (current_node == NULL)
         {
-            current_node = queue.head;
+            current_node = ready_queue.head;
             while (current_node != NULL)
             {
                 printf("Id: %d\n",current_node->processInfo.id);
                 current_node = current_node->next;
-                if(current_node == queue.head)
+                if(current_node == ready_queue.head)
                     break;
                 
             }
             break;
         }
         */
+        x = getClk();
+        
         
     }
 
