@@ -124,7 +124,7 @@ int main(int argc, char * argv[])
             
             printf("\nScheduler Initialization Succes\n");
             if(algorithmNumber == 1) return execl("./scheduler.out", "./scheduler.out", "1",(char*) NULL);    
-            else if(algorithmNumber == 2) return execl("./scheduler.out", "./scheduler.out", "2",(char*) NULL);   
+            else if(algorithmNumber == 2) return execl("./scheduler.out", "./srtn_schedular.out", "2",(char*) NULL);    
             else if(algorithmNumber == 3) return execl("./scheduler.out", "./scheduler.out", "3",(char*) NULL);
             exit(-1);      
         }
