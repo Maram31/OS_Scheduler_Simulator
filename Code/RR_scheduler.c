@@ -17,91 +17,149 @@ bool startsWith(const char *a, const char *b);
 
 int main(int argc, char * argv[])
 {
-
+    //Temporary till process generator works
     struct LinkedList processes = {NULL, NULL, 0};
+    //
+
+    //Process ID for forking
+    pid_t pid;
+
+    //Ready and running queues to help in context switching
     struct LinkedList ready_queue = {NULL, NULL, 0};
     struct LinkedList running_queue = {NULL, NULL, 0};
+    //
+    //Temporary till process generator works
     readFromFileAndFillList(&processes);
+    //
 
+    //Time quantum used for Round Robin
     int time_quantum;
-    
     //temp value
     time_quantum = 2;
+    //
 
-    // 3. Initiate and create the scheduler and clock processes.
-    /*
-    pid_t pid=fork();
-    if(pid == 0){
-        printf("\nClock Initialization Succes\n"); 
-        return execl("./clk.out", "./clk.out", (char*) NULL);
-    }
-    else if(pid == -1)
-    {
-        printf("\nClock Initialization Error\n");
-        exit(-1); 
-    }*/
-    
-
-    // 4. Use this function after creating the clock process to initialize clock
+    // Use this function after creating the clock process to initialize clock
     initClk();
     // To get time use this
     int x = getClk();
+    //
+
+    //Debug
     printf("RR current time is %d\n", x);
-    //sleep(1);
-    //printf("current time is %d\n", x);
-    // TODO Generation Main Loop
-    // 5. Create a data structure for processes and provide it with its parameters.
-    // 6. Send the information to the scheduler at the appropriate time.
+    //
+    //Variable to loop every 1 second
+    int prev_time = x;
+    //
+    
+    //Pointer to first process in linked list (Will be removed when process generator is finished)
     struct Node* current_node = processes.head;
-    struct Node * previous_head = NULL;
+    //
+
+
+    struct Node * previous_head = NULL;//malloc(sizeof(struct Node));
     struct Node * current_head = NULL;
-    pid_t pid;
-    int prev_start = -1;
+    
+    int flag_first_time = 0;
+
+    int start_time_prev_process = -1;
+
+    //Logic of algorithm
     while (1)
     {
-        
-        
-        if(x >= current_node ->processInfo.arrivaltime && current_node != NULL)
+        //printf("While current time is %d\n", x);
+        //Puts a process in the ready queue when it arrives (ie. arrival time = current time) (Will be removed when process generator is finished)
+        if(current_node != NULL && x >= current_node ->processInfo.arrivaltime)
         {
             //printf("current time is %d\n", x);
             //printf("Id: %d\n",current_node->processInfo.id);
             //sleep(1);
             insertToQueue(&ready_queue, current_node->processInfo);
             current_node = current_node->next;
-
         }
+        //
 
         
+        //Move process from running state to ready state
+        /*if(running_queue.head!= NULL)
+            printf("Running queue head start time is %d\n", running_queue.head->processInfo.starttime);
+        */
+        if(running_queue.head != NULL && (getClk() - running_queue.head->processInfo.previousstart == time_quantum))
+        {
+            //printf("current time is %d\tprocess with id %d has start time %d\n", x, running_queue.head->processInfo.id, running_queue.head->processInfo.starttime);
+            struct Node * temp_node = running_queue.head;
+            removeFromQueue(&running_queue, temp_node->processInfo.id );
+            printf("OSOS current time is %d\n", x);
+            insertToQueue(&ready_queue, temp_node->processInfo);
+            //printf("Hellloo\n");
+        }
+        //
+
         current_head = ready_queue.head;
 
-        if(current_head != NULL) // && (prev_start == -1 || x - prev_start >= time_quantum))
+        //Move process from ready state to running state
+        if(current_head != NULL && running_queue.head == NULL)//&& running_queue.size == 0)// && (start_time_prev_process == -1 || getClk() - start_time_prev_process >= time_quantum))
         {
-            prev_start = x;
+            start_time_prev_process = getClk();
             removeFromQueue(&ready_queue, current_head->processInfo.id );
+            //printf("Is starteddddd? %d\n", current_head->processInfo.isStarted);
+            flag_first_time = current_head->processInfo.isStarted;
+            /*free(previous_head);
+            memcpy(previous_head, current_head, sizeof(struct Node));
+            
+            
+            if(current_head ->processInfo.isStarted == 0)
+            {
+                current_head -> processInfo.starttime = getClk();
+                current_head -> processInfo.previousstart = getClk();
+            }
+            else
+            {
+                current_head -> processInfo.previousstart = getClk();
+            }*/
+            
+            current_head -> processInfo.starttime = getClk();
+            current_head -> processInfo.previousstart = getClk();
+            current_head -> processInfo.isStarted = 1;
             insertToQueue(&running_queue, current_head->processInfo);
             previous_head = current_head;
             current_head = ready_queue.head;
 
-            pid=fork();
-            if(pid == 0){
-                //printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
-                char id_param [MAXCHAR] ; 
-                sprintf(id_param, "%d", previous_head -> processInfo.id);
-                char running_time_param [MAXCHAR];
-                sprintf(running_time_param, "%d", previous_head -> processInfo.runningtime);
-                char arrival_time_param [MAXCHAR];
-                sprintf(arrival_time_param, "%d", previous_head -> processInfo.arrivaltime);
-                return execl("./process.out", "./process.out", id_param, arrival_time_param, running_time_param,(char*)NULL);
-            }
-            else if(pid == -1)
+            //current_head ->processInfo.isRunning = 1;
+            //printf("Is started? %d\n", previous_head->processInfo.isStarted);
+            if(flag_first_time == 0)
             {
-                printf("\nClock Initialization Error\n");
-                exit(-1); 
+                pid=fork();
+                if(pid == 0){
+                    printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
+                    
+                    //Prepare parameters to be sent to process
+                    char id_param [MAXCHAR] ; 
+                    sprintf(id_param, "%d", previous_head -> processInfo.id);
+                    char running_time_param [MAXCHAR];
+                    sprintf(running_time_param, "%d", previous_head -> processInfo.runningtime);
+                    char arrival_time_param [MAXCHAR];
+                    sprintf(arrival_time_param, "%d", previous_head -> processInfo.arrivaltime);
+                    //
+                    
+                    //Start the process and give it the required parameters
+                    return execl("./process.out", "./process.out", id_param, arrival_time_param, running_time_param,(char*)NULL);
+                }
+                else if(pid == -1)
+                {
+                    printf("\nClock Initialization Error\n");
+                    exit(-1); 
+                }
+                else
+                {
+                    //current_head ->processInfo.isRunning = true;
+                    //previous_head -> processInfo.starttime = getClk();
+                }
             }
             else
             {
-                
+                printf("Resuming...\n");
             }
+            
 
         }
 
@@ -121,8 +179,26 @@ int main(int argc, char * argv[])
             break;
         }
         */
-        x = getClk();
+        //Debug
+        struct Node * temp_node_debug = running_queue.head;
+        if (temp_node_debug != NULL)
+        {
+            //temp_node_debug = ready_queue.head;
+            while (temp_node_debug != NULL)
+            {
+                printf("Running queue\tId: %d\tTime: %d\n",temp_node_debug->processInfo.id, getClk());
+                temp_node_debug = temp_node_debug->next;
+                if(temp_node_debug == running_queue.head)
+                    break;
+                
+            }
+            //break;
+        }
         
+       //wait for a second to pass
+        while(getClk() - prev_time == 0);
+        x = getClk();
+        prev_time = x;
         
     }
 
@@ -193,10 +269,12 @@ void loadProcess(char str[], struct LinkedList* list)
             newProcess.priority = atoi(my_string);
             i ++;
         }
-
+        //newProcess.isRunning = false;
+        
 		ptr = strtok(NULL, delim);
         free(my_string);
 	}
+    newProcess.isStarted = 0;
 
     addNodeToLikedlistEnd(list, newProcess);
 }

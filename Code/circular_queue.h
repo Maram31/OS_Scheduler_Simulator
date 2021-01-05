@@ -8,6 +8,8 @@ struct processData
     int arrivaltime;
     int priority;
     int runningtime;
+    int starttime;
+    int previousstart;
     int id;
     int executionTime;
     int remainingTime;
@@ -16,6 +18,7 @@ struct processData
     bool isFinished;
     bool isReady;
     bool isRunning;
+    int isStarted;
 
 };
 
@@ -38,6 +41,9 @@ void insertToQueue(struct LinkedList* ProcessesList, struct processData newProce
     newProcessNode = (struct Node*)malloc(sizeof(struct Node));
     newProcessNode-> processInfo = newProcess;
 
+    //Debug
+    //printf("Is started? %d\n", newProcessNode->processInfo.isStarted);
+    //
 
     if (ProcessesList->head == NULL) {                                                                       // linked list is empty so new process is inserted first in list
         ProcessesList->head = newProcessNode;
