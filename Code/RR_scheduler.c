@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <signal.h>
 #include "headers.h"
 #include "circular_queue.h"
 #define null 0
@@ -87,9 +88,18 @@ int main(int argc, char * argv[])
         {
             //printf("current time is %d\tprocess with id %d has start time %d\n", x, running_queue.head->processInfo.id, running_queue.head->processInfo.starttime);
             struct Node * temp_node = running_queue.head;
+            temp_node->processInfo.remainingTime -= time_quantum;
             removeFromQueue(&running_queue, temp_node->processInfo.id );
-            printf("OSOS current time is %d\n", x);
-            insertToQueue(&ready_queue, temp_node->processInfo);
+            
+            //printf("Forked pid remove: %d\n", temp_node -> processInfo.systempid);
+            printf("Debug current time is %d\n", x);
+            if(temp_node->processInfo.remainingTime > 0)
+            {
+                insertToQueue(&ready_queue, temp_node->processInfo);
+                kill(temp_node->processInfo.systempid, SIGSTOP);
+            }
+            else
+                printf("Goodbye process %d\n", temp_node -> processInfo.id);
             //printf("Hellloo\n");
         }
         //
@@ -100,27 +110,21 @@ int main(int argc, char * argv[])
         if(current_head != NULL && running_queue.head == NULL)//&& running_queue.size == 0)// && (start_time_prev_process == -1 || getClk() - start_time_prev_process >= time_quantum))
         {
             start_time_prev_process = getClk();
-            removeFromQueue(&ready_queue, current_head->processInfo.id );
+            removeFromQueue(&ready_queue, current_head-> processInfo.id );
             //printf("Is starteddddd? %d\n", current_head->processInfo.isStarted);
             flag_first_time = current_head->processInfo.isStarted;
-            /*free(previous_head);
-            memcpy(previous_head, current_head, sizeof(struct Node));
             
-            
-            if(current_head ->processInfo.isStarted == 0)
-            {
-                current_head -> processInfo.starttime = getClk();
-                current_head -> processInfo.previousstart = getClk();
-            }
-            else
-            {
-                current_head -> processInfo.previousstart = getClk();
-            }*/
             
             current_head -> processInfo.starttime = getClk();
-            current_head -> processInfo.previousstart = getClk();
+            if(current_head ->processInfo.remainingTime - time_quantum < 0)
+            {
+                current_head -> processInfo.previousstart = getClk() + current_head ->processInfo.remainingTime - time_quantum;
+
+            }
+            else
+                current_head -> processInfo.previousstart = getClk() ;
             current_head -> processInfo.isStarted = 1;
-            insertToQueue(&running_queue, current_head->processInfo);
+            
             previous_head = current_head;
             current_head = ready_queue.head;
 
@@ -129,8 +133,9 @@ int main(int argc, char * argv[])
             if(flag_first_time == 0)
             {
                 pid=fork();
+                
                 if(pid == 0){
-                    printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
+                    //printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
                     
                     //Prepare parameters to be sent to process
                     char id_param [MAXCHAR] ; 
@@ -153,11 +158,16 @@ int main(int argc, char * argv[])
                 {
                     //current_head ->processInfo.isRunning = true;
                     //previous_head -> processInfo.starttime = getClk();
+                    //printf("Forked pid insert: %d\n", pid);
+                    previous_head->processInfo.systempid = pid;
+                    insertToQueue(&running_queue, previous_head->processInfo);
                 }
             }
             else
             {
-                printf("Resuming...\n");
+                insertToQueue(&running_queue, previous_head->processInfo);
+                kill(previous_head->processInfo.systempid, SIGCONT);
+                //printf("Resume\n");
             }
             
 
@@ -186,7 +196,7 @@ int main(int argc, char * argv[])
             //temp_node_debug = ready_queue.head;
             while (temp_node_debug != NULL)
             {
-                printf("Running queue\tId: %d\tTime: %d\n",temp_node_debug->processInfo.id, getClk());
+                //printf("Running queue\tId: %d\tTime: %d\n",temp_node_debug->processInfo.id, getClk());
                 temp_node_debug = temp_node_debug->next;
                 if(temp_node_debug == running_queue.head)
                     break;
@@ -262,6 +272,7 @@ void loadProcess(char str[], struct LinkedList* list)
         else if (i == 2)
         {
             newProcess.runningtime = atoi(my_string);
+            newProcess.remainingTime = atoi(my_string);//Important
             i ++;
         }
         else if (i == 3)

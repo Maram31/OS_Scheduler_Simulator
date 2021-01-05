@@ -5,20 +5,22 @@
 
 struct processData
 {
-    int arrivaltime;
+    int arrivaltime; //
     int priority;
-    int runningtime;
-    int starttime;
-    int previousstart;
-    int id;
-    int executionTime;
-    int remainingTime;
-    int waitingTime;
+    int runningtime; //
+    int starttime;  //
+    int previousstart; //
+    int id; //
+    int executionTime; 
+    int remainingTime;  //
+    int waitingTime;    //
 
-    bool isFinished;
+    pid_t systempid;    //
+
+    bool isFinished;    
     bool isReady;
     bool isRunning;
-    int isStarted;
+    int isStarted;  //
 
 };
 
