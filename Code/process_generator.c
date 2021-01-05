@@ -23,6 +23,12 @@ struct linkedlist           //likedlist struct
     int size;
 };
 
+struct msgbuff
+{
+    long mtype;
+    struct process P;
+};
+
 void addNodeToLikedlistEnd(struct linkedlist* list, struct process processToAdd)
 {
     struct node * nodeToAdd = (struct node *) malloc(sizeof(struct node));  //create new node and assign the process to it.
@@ -44,16 +50,54 @@ void addNodeToLikedlistEnd(struct linkedlist* list, struct process processToAdd)
     list->size ++;
 }
 
+
+void removeHeadNodeFromLikedlist(struct linkedlist* list)
+{
+    if(list->head == NULL)
+    {
+        return;
+    }
+    else if(list->head->next == NULL)
+    {
+        free(list->head);
+        list->head = NULL;
+        list->tail = NULL;
+    }
+    else
+    {
+        struct node * tempNode = (struct node *) malloc(sizeof(struct node));  //create new node and assign the process to it.
+        tempNode = list->head;
+        list->head = list->head->next;
+        free(tempNode);
+    }
+    list->size --;
+}
+
+
 void clearResources(int);
 void readFromFileAndFillList(struct linkedlist* list);
 void writeInFile();
 void chooseAlgorithm(short* algorithmNumber);
+bool sendProcessToScheduler(struct process* p, int* msgq_id); 
 
 int main(int argc, char * argv[])
 {
     pid_t pid;
     signal(SIGINT, clearResources);
     struct linkedlist processes = {NULL, NULL, 0};
+    
+    key_t key_id;
+    int msgq_id;
+
+    key_id = ftok("keyfile", 65);
+    msgq_id = msgget(key_id, 0666 | IPC_CREAT);
+
+    if (msgq_id == -1)
+    {
+        perror("Error in create message queue");
+        exit(-1);
+    }
+    printf("Process Generator: Message Queue ID = %d\n", msgq_id);
 
     // 1. Read the input files.
     readFromFileAndFillList(&processes);
@@ -93,20 +137,52 @@ int main(int argc, char * argv[])
     // 4. Use this function after creating the clock process to initialize clock
     initClk();
     // To get time use this
-    int x = getClk();
-    printf("current time is %d\n", x);
+    int clk = getClk();
+    printf("current time is %d\n", clk);
     // TODO Generation Main Loop
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
+
     while (processes.head != NULL)
     {
-        x = getClk();
-        printf("current time is %d\n", x);
-        sleep(5);
-    }
+        clk = getClk();
+        if(processes.head->data.arrivaltime > clk)
+        {
+            sleep(processes.head->data.arrivaltime - clk);  //sleep until the arrival time of the next process comes
+            clk = getClk();
+            printf("current time is %d\n", clk);
+        }
+        else
+        {
+            while(processes.head != NULL && processes.head->data.arrivaltime <= clk)
+            { 
+                if(sendProcessToScheduler(&processes.head->data, &msgq_id))
+                {
+                    removeHeadNodeFromLikedlist(&processes);
+                }
 
+            }
+        }
+    }
+    sleep(10);
+    msgctl(msgq_id, IPC_RMID, (struct msqid_ds *)0);
     // 7. Clear clock resources
     destroyClk(true);
+}
+
+bool sendProcessToScheduler(struct process* p, int* msgq_id)
+{
+    int send_val;
+    struct msgbuff message;
+    message.P = *p;
+
+    send_val = msgsnd(*msgq_id, &message, sizeof(message.P), !IPC_NOWAIT);
+    if (send_val == -1)
+    {
+        perror("Errror in send");
+        return false;
+    }
+    return true;
 }
 
 void clearResources(int signum)
