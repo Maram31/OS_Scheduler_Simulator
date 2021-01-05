@@ -70,11 +70,66 @@ void insert(struct LinkedList* ProcessesList, struct Process newProcess) {
  }
 
 
+void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess) {
+        
+    struct Node * newProcessNode;
+    newProcessNode = (struct Node*)malloc(sizeof(struct Node));
+    newProcessNode->processInfo = newProcess;
+        
+    if (ProcessesList->head == NULL) {                                                                       // linked list is empty so new process is inserted first in list
+        ProcessesList->head = newProcessNode;
+        return;
+    }
+
+    if (newProcess.executionTime < ProcessesList->head->processInfo.executionTime) {                                   // new process has the highest priority and should be inserted first in linked list
+        newProcessNode->next = ProcessesList->head;
+        ProcessesList->head = newProcessNode;
+        return;
+    } 
+
+    else {                                                                                       // traverse the linked list to find best position to insert the new process in
+        struct Node * pointerToProcessNode;                                                  // create node pointer to traverse the linked list
+
+        pointerToProcessNode = ProcessesList->head;                                                      // initially pointing to beginning of linked list
+
+        while (ProcessesList->head->next != NULL) {                                                 // as long as the end of the linked list hasn't been reached 
+                
+            if (newProcessNode->processInfo.executionTime <= pointerToProcessNode->next->processInfo.executionTime) {     // if position isn't found yet
+                
+                struct Node * temp = pointerToProcessNode->next;
+                pointerToProcessNode->next = newProcessNode;                           // move node pointer to the next node
+                newProcessNode->next = temp;
+                // delete temp will delete node?
+            
+            }
+                
+            else {                                                                           // position is found
+                break;                                                        
+            }
+
+        }
+
+        ///////////////////////NOT SURE OF THIS
+        //newProcessNode->next = pointerToProcessNode->next;                                   // insert new process either at the end of the list or at the chosen position
+        //pointerToProcessNode->next= newProcessNode;
+    }
+ }
+
+
+/* function to swap data of two nodes a and b*/
+void swapnodes(struct Node *a, struct Node *b) 
+{ 
+    struct Process temp;
+    temp = a->processInfo; 
+    a->processInfo = b->processInfo; 
+    b->processInfo = temp; 
+} 
+
 
 
 // Removes the process with the highest priority form the beginning of the list 
 
-void remove(struct LinkedList * L) {
+void remove_head(struct LinkedList * L) {
     if(L->head != NULL) {
         struct Node * N = L->head;       
         L->head = L->head->next;
@@ -88,7 +143,7 @@ void remove(struct LinkedList * L) {
 
 //Bubble sort algorithm for linked list
 // Worst case cmplx is O(n^2), but the list will be almost sorted so will be O(n) 
-void bubbleSort_asc(struct LinkedList *L) 
+void bubbleSort_srtn(struct LinkedList *L) 
 { 
     int swapped, i; 
     struct Node *ptr1; 
@@ -108,7 +163,7 @@ void bubbleSort_asc(struct LinkedList *L)
             /*HERE EXECUTION TIME IS USED IN CASE OF SRTN, CAN BE SWAPPED FOR PRIORITY*/
             if (ptr1->processInfo.executionTime > ptr1->next->processInfo.executionTime) //If process closer to head bigger than its next, swap
             {  
-                swap(ptr1, ptr1->next); 
+                swapnodes(ptr1, ptr1->next); 
                 swapped = 1; 
             } 
             ptr1 = ptr1->next; 
@@ -118,14 +173,7 @@ void bubbleSort_asc(struct LinkedList *L)
     while (swapped); 
 } 
   
-/* function to swap data of two nodes a and b*/
-void swap(struct Node *a, struct Node *b) 
-{ 
-    struct Process temp;
-    temp = a->processInfo; 
-    a->processInfo = b->processInfo; 
-    b->processInfo = temp; 
-} 
+
 
 //Bubble sort descending for HPF
 void bubbleSort_desc(struct LinkedList *L) 
@@ -148,7 +196,7 @@ void bubbleSort_desc(struct LinkedList *L)
             /*HERE EXECUTION TIME IS USED IN CASE OF SRTN, CAN BE SWAPPED FOR PRIORITY*/
             if (ptr1->processInfo.executionTime < ptr1->next->processInfo.executionTime) //If process closer to head bigger than its next, swap
             {  
-                swap(ptr1, ptr1->next); 
+                swapnodes(ptr1, ptr1->next); 
                 swapped = 1; 
             } 
             ptr1 = ptr1->next; 
