@@ -48,7 +48,7 @@ int main(int argc, char * argv[])
     }
     printf("Scheduler: Message Queue ID = %d\n", msgq_id);
 
-
+/*
     while (1)
     {
         rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, !IPC_NOWAIT);
@@ -58,7 +58,7 @@ int main(int argc, char * argv[])
         else
             printf("\nProcess with id %d and arrival time %d was received at time %d\n", message.P.id, message.P.arrivalTime, getClk());
     }
-
+*/
 
     if(!strcmp(argv[1], "1"))
     {
@@ -82,18 +82,6 @@ int main(int argc, char * argv[])
         //Add Algorithm function call
     }
 
-    while (1)
-    {
-        rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, !IPC_NOWAIT);
-
-        if (rec_val == -1)
-            perror("Error in receive");
-        else
-            printf("\nProcess with id %d and arrival time %d was received at time %d\n", message.P.id, message.P.arrivalTime, getClk());
-    }
-    
-  
-    
 
 
     fclose(schedulerLogFile);
@@ -103,7 +91,7 @@ int main(int argc, char * argv[])
 }
 
 
-/*
+
 void HPF() {
 
     struct LinkedList ready_queue = {NULL, NULL, 0};
@@ -127,9 +115,13 @@ void HPF() {
 
             else {
                 printf("\nProcess with id %d and arrival time %d was received at time %d with priority %d\n", message.P.id, message.P.arrivalTime, getClk(), message.P.priority);
+                printf("Placing process in ready queue\n");
                 insertWithPriority(&ready_queue, message.P);
+                printf("Done placing\n");
+                printf("Printing list\n");
                 printLinkedList(&ready_queue);
                 printf("\n%d\n", c++);
+                printf("Done\n");
 
             
             
@@ -140,7 +132,7 @@ void HPF() {
  
 }
 
-*/
+
 void reportProcessToLogFile(struct Process* P, int state, int clk)
 {
 

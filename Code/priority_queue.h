@@ -39,6 +39,7 @@ void insertWithPriority(struct LinkedList* ProcessesList, struct Process newProc
         
     if (ProcessesList->head == NULL) {                                                                       // linked list is empty so new process is inserted first in list
         ProcessesList->head = newProcessNode;
+        newProcessNode ->previous = NULL;
         return;
     }
 
@@ -53,7 +54,7 @@ void insertWithPriority(struct LinkedList* ProcessesList, struct Process newProc
 
         pointerToProcessNode = ProcessesList->head;                                                      // initially pointing to beginning of linked list
 
-        while (ProcessesList->head->next != NULL) {                                                 // as long as the end of the linked list hasn't been reached 
+        while (pointerToProcessNode->next != NULL) {                                                 // as long as the end of the linked list hasn't been reached 
                 
             if (newProcessNode->processInfo.priority >= pointerToProcessNode->next->processInfo.priority) {     // if position isn't found yet
                 pointerToProcessNode = pointerToProcessNode->next;                           // move node pointer to the next node
@@ -216,7 +217,7 @@ void printLinkedList(struct LinkedList * L) {
             printf("%d ",N->processInfo.id);
             printf("%d ",N->processInfo.arrivalTime);
             printf("%d ",N->processInfo.runTime);
-            printf("%d ",N->processInfo.priority);
+            printf("%d \n",N->processInfo.priority);
             //printf("%d ",N->processInfo.remainingTime);
             //printf("%d \n",N->processInfo.waitingTime);
 
