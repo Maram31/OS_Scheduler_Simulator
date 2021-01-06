@@ -1,15 +1,7 @@
 #include "headers.h"
 #define MAXCHAR 300
 
-/*
-struct process              //struct to hold the information of each process
-{
-    int arrivaltime;
-    int priority;
-    int runningtime;
-    int id;
-};
-*/
+
 struct node                 //struct to gold the information of each node and a pointer to the next and previous nodes in the linkedlist
 {
     struct Process data;
@@ -78,7 +70,7 @@ void removeHeadNodeFromLikedlist(struct linkedlist* list)
 void clearResources(int);
 void readFromFileAndFillList(struct linkedlist* list);
 void writeInFile();
-void chooseAlgorithm(short* algorithmNumber);
+void chooseAlgorithm(short* algorithmNumber, int* quantum);
 bool sendProcessToScheduler(struct Process* p, int* msgq_id); 
 
 int main(int argc, char * argv[])
@@ -105,8 +97,10 @@ int main(int argc, char * argv[])
 
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     short algorithmNumber;
-    chooseAlgorithm(&algorithmNumber);
-
+    int quantum = 0;
+    chooseAlgorithm(&algorithmNumber, &quantum);
+    char quantumBuffer[10];
+    sprintf(quantumBuffer, "%d", quantum);
     // 3. Initiate and create the scheduler and clock processes.
     pid=fork();
     if(pid == 0){
@@ -197,7 +191,7 @@ bool startsWith(const char *a, const char *b)
    return 0;
 }
 
-void chooseAlgorithm(short* algorithmNumber)
+void chooseAlgorithm(short* algorithmNumber, int* quantum)
 {
     printf("Please enter the number of the required scheduling algorithm: \n");
     printf("1- Non-preemptive Highest Priority First (HPF) \n");
@@ -225,6 +219,15 @@ void chooseAlgorithm(short* algorithmNumber)
         break;
     case 3:
         printf("\nChosen Algorithm: Round Robin (RR) \n");
+        printf("Enter the quantum: ");
+        int quan = 0;
+        scanf("%d", &quan);
+        while(quantum <= 0)
+        {
+            printf("Please enter a valid quantum: ");
+            scanf("%d", &quan);
+        }
+        *quantum = quan;
         break;
     default:
         break;
