@@ -14,7 +14,8 @@ struct processData
     int executionTime; 
     int remainingTime;  //
     int waitingTime;    //
-
+    int previousstop;
+    float weightedTA;
     pid_t systempid;    //
 
     bool isFinished;    
