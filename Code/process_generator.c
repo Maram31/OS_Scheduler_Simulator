@@ -77,7 +77,7 @@ void removeHeadNodeFromLikedlist(struct linkedlist* list)
 void clearResources(int);
 void readFromFileAndFillList(struct linkedlist* list);
 void writeInFile();
-void chooseAlgorithm(short* algorithmNumber);
+void chooseAlgorithm(short* algorithmNumber, int* quantum);
 bool sendProcessToScheduler(struct process* p, int* msgq_id); 
 
 int main(int argc, char * argv[])
@@ -104,8 +104,10 @@ int main(int argc, char * argv[])
 
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     short algorithmNumber;
-    chooseAlgorithm(&algorithmNumber);
-
+    int quantum = 0;
+    chooseAlgorithm(&algorithmNumber, &quantum);
+    char quantumBuffer[10];
+    sprintf(quantumBuffer, "%d", quantum);
     // 3. Initiate and create the scheduler and clock processes.
     pid=fork();
     if(pid == 0){
@@ -125,7 +127,7 @@ int main(int argc, char * argv[])
             printf("\nScheduler Initialization Succes\n");
             if(algorithmNumber == 1) return execl("./scheduler.out", "./scheduler.out", "1",(char*) NULL);    
             else if(algorithmNumber == 2) return execl("./scheduler.out", "./scheduler.out", "2",(char*) NULL);   
-            else if(algorithmNumber == 3) return execl("./scheduler.out", "./scheduler.out", "3",(char*) NULL);
+            else if(algorithmNumber == 3) return execl("./scheduler.out", "./scheduler.out", "3", quantumBuffer,(char*) NULL);
             exit(-1);      
         }
         else if(pid == -1)
@@ -196,7 +198,7 @@ bool startsWith(const char *a, const char *b)
    return 0;
 }
 
-void chooseAlgorithm(short* algorithmNumber)
+void chooseAlgorithm(short* algorithmNumber, int* quantum)
 {
     printf("Please enter the number of the required scheduling algorithm: \n");
     printf("1- Non-preemptive Highest Priority First (HPF) \n");
@@ -224,6 +226,15 @@ void chooseAlgorithm(short* algorithmNumber)
         break;
     case 3:
         printf("\nChosen Algorithm: Round Robin (RR) \n");
+        printf("Enter the quantum: ");
+        int quan = 0;
+        scanf("%d", &quan);
+        while(quantum <= 0)
+        {
+            printf("Please enter a valid quantum: ");
+            scanf("%d", &quan);
+        }
+        *quantum = quan;
         break;
     default:
         break;
