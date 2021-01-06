@@ -16,13 +16,7 @@
 #include <signal.h>
 
 
-struct Process              //struct to hold the information of each process
-{
-    int arrivalTime;
-    int priority;
-    int runTime;
-    int id;
-};
+
 
 
 typedef short bool;
@@ -31,6 +25,26 @@ typedef short bool;
 
 #define SHKEY 300
 
+struct Process              //struct to hold the information of each process
+{
+    int id;
+    int arrivalTime; //
+    int priority;
+    int runTime; //
+    int starttime;  //
+    int previousstart; //
+    int executionTime; 
+    int remainingTime;  //
+    int waitingTime;    //
+    int previousstop;
+    float weightedTA;
+    pid_t systempid;    //
+
+    bool isFinished;    
+    bool isReady;
+    bool isRunning;
+    int isStarted;  //
+};
 
 ///==============================
 //don't mess with this variable//

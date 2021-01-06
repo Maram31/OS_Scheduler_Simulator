@@ -94,7 +94,9 @@ int main(int argc, char * argv[])
 
     // 1. Read the input files.
     readFromFileAndFillList(&processes);
-
+    int size_param = processes.size;
+    char size_param_str [MAXCHAR];
+    sprintf(size_param_str, "%d", size_param);
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     short algorithmNumber;
     int quantum = 0;
@@ -120,7 +122,7 @@ int main(int argc, char * argv[])
             printf("\nScheduler Initialization Succes\n");
             if(algorithmNumber == 1) return execl("./scheduler.out", "./scheduler.out", "1",(char*) NULL);    
             else if(algorithmNumber == 2) return execl("./scheduler.out", "./scheduler.out", "2",(char*) NULL);   
-            else if(algorithmNumber == 3) return execl("./RR_scheduler.out", "./RR_scheduler.out", "3",(char*) NULL);
+            else if(algorithmNumber == 3) return execl("./RR_scheduler.out", "./RR_scheduler.out", "3", quantumBuffer, size_param_str,(char*) NULL);
             exit(-1);      
         }
         else if(pid == -1)
@@ -133,6 +135,7 @@ int main(int argc, char * argv[])
     initClk();
     // To get time use this
     int clk = getClk();
+    clk = getClk();
     printf("current time is %d\n", clk);
     // TODO Generation Main Loop
     // 5. Create a data structure for processes and provide it with its parameters.
@@ -142,15 +145,28 @@ int main(int argc, char * argv[])
     {
         
         clk = getClk();
-        if(processes.head->data.arrivalTime > clk)
+        //Me
+        if(processes.head != NULL )//&& clk >= processes.head ->data.arrivaltime)
         {
-            sleep(processes.head->data.arrivalTime - clk);  //sleep until the arrival time of the next process comes
+            
+            if(sendProcessToScheduler(&processes.head->data, &msgq_id))
+                {
+                    removeHeadNodeFromLikedlist(&processes);
+                    //printf("Here Hello\n");
+                }
+        }
+        //
+        //Heba
+        /*
+        if(processes.head->data.arrivaltime > clk)
+        {
+            sleep(processes.head->data.arrivaltime - clk);  //sleep until the arrival time of the next process comes
             clk = getClk();
             printf("current time is %d\n", clk);
         }
         else
         {
-            while(processes.head != NULL && processes.head->data.arrivalTime <= clk)
+            while(processes.head != NULL && processes.head->data.arrivaltime <= clk)
             { 
                 if(sendProcessToScheduler(&processes.head->data, &msgq_id))
                 {
@@ -159,7 +175,9 @@ int main(int argc, char * argv[])
 
             }
         }
+        */
     }
+    while(1);
     sleep(10);
     msgctl(msgq_id, IPC_RMID, (struct msqid_ds *)0);
     // 7. Clear clock resources
@@ -262,6 +280,7 @@ void loadProcess(char str[], struct linkedlist* list)
         else if (i == 2)
         {
             newProcess.runTime = atoi(my_string);
+            newProcess.remainingTime = atoi(my_string);//Important
             i ++;
         }
         else if (i == 3)
@@ -273,7 +292,8 @@ void loadProcess(char str[], struct linkedlist* list)
 		ptr = strtok(NULL, delim);
         free(my_string);
 	}
-
+    newProcess.starttime = -1;
+    newProcess.isStarted = 0;
     addNodeToLikedlistEnd(list, newProcess);
 }
 

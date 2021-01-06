@@ -1,8 +1,9 @@
 
 #include <stdio.h> 
 #include <stdlib.h> 
+#include "headers.h"
 
-
+/*
 struct processData
 {
     int arrivaltime; //
@@ -23,10 +24,10 @@ struct processData
     bool isRunning;
     int isStarted;  //
 
-};
+};*/
 
 struct Node {
-    struct processData processInfo;
+    struct Process processInfo;
     struct Node * next;
     struct Node * previous;
 };
@@ -38,7 +39,7 @@ struct LinkedList {
 };
 
 
-void insertToQueue(struct LinkedList* ProcessesList, struct processData newProcess) {
+void insertToQueue(struct LinkedList* ProcessesList, struct Process newProcess) {
         
     struct Node * newProcessNode;
     newProcessNode = (struct Node*)malloc(sizeof(struct Node));

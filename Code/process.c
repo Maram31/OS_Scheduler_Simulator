@@ -70,7 +70,7 @@ int main(int agrc, char * argv[])
 void pause_handler(int signum)
 {
     //printf("\nOUCH....Signal #%d received\n",signum);
-    //printf("Pauseing at %d\n", getClk());
+    //printf("Pausing at %d\n", getClk());
     int x = getClk();
     prev_pause = x;
     raise(SIGSTOP);
