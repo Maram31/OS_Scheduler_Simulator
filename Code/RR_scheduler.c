@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <signal.h>
+#include <math.h>
 #include "headers.h"
 #include "circular_queue.h"
 #define null 0
@@ -13,6 +14,8 @@ void readFromFileAndFillList(struct LinkedList* list);
 void loadProcess(char str[], struct LinkedList* list);
 void addNodeToLikedlistEnd(struct LinkedList* list, struct processData processToAdd);
 bool startsWith(const char *a, const char *b);
+void child_handler(int signum);
+void finish_handler(int signum);
 
 
 
@@ -26,7 +29,8 @@ int main(int argc, char * argv[])
     schedulerPerfFile = fopen("scheduler.perf", "w");
     fprintf(schedulerLogFile,"#At time x process y state arr w total z remain y wait k\n");
     
-
+    signal(SIGUSR1, finish_handler);
+    //signal(SIGCHLD, child_handler);
     //
     //Temporary till process generator works
     struct LinkedList processes = {NULL, NULL, 0};
@@ -78,6 +82,7 @@ int main(int argc, char * argv[])
     //Logic of algorithm
     while (1)
     {
+        //printf("here\n");
         //printf("While current time is %d\n", x);
         //Puts a process in the ready queue when it arrives (ie. arrival time = current time) (Will be removed when process generator is finished)
         if(current_node != NULL && x >= current_node ->processInfo.arrivaltime)
@@ -104,13 +109,14 @@ int main(int argc, char * argv[])
             removeFromQueue(&running_queue, temp_node->processInfo.id );
             
             //printf("Forked pid remove: %d\n", temp_node -> processInfo.systempid);
-            printf("Debug current time is %d\n", x);
+            //printf("Debug current time is %d\n", x);
             if(temp_node->processInfo.remainingTime > 0)
             {
                 temp_node ->processInfo.previousstop = getClk();
                 fprintf(schedulerLogFile, "At time %d process %d stopped arr %d total %d remain %d wait %d\n", getClk(), temp_node ->processInfo.id, temp_node ->processInfo.arrivaltime, temp_node ->processInfo.runningtime, temp_node ->processInfo.remainingTime, temp_node->processInfo.waitingTime);
                 insertToQueue(&ready_queue, temp_node->processInfo);
-                kill(temp_node->processInfo.systempid, SIGSTOP);
+                //kill(temp_node->processInfo.systempid, SIGSTOP);
+                kill(temp_node->processInfo.systempid, SIGUSR1);
             }
             else
             {
@@ -198,6 +204,7 @@ int main(int argc, char * argv[])
                 fprintf(schedulerLogFile, "At time %d process %d resumed arr %d total %d remain %d wait %d\n", getClk(), previous_head ->processInfo.id, previous_head ->processInfo.arrivaltime, previous_head ->processInfo.runningtime, previous_head ->processInfo.remainingTime, previous_head->processInfo.waitingTime);
                 insertToQueue(&running_queue, previous_head->processInfo);
                 kill(previous_head->processInfo.systempid, SIGCONT);
+                //kill(previous_head->processInfo.systempid, SIGUSR2);
                 //printf("Resume\n");
             }
             
@@ -236,6 +243,8 @@ int main(int argc, char * argv[])
             //break;
         }
         
+        
+
        //wait for a second to pass
         while(getClk() - prev_time == 0);
         x = getClk();
@@ -244,37 +253,80 @@ int main(int argc, char * argv[])
         //Condition to exit the loop (will be modified)
         if(running_queue.head == NULL && ready_queue.head == NULL && processes.size == 0)
         {
-            printf("zzz\n");
+            //printf("zzz\n");
             break;
         }
+        
 
     }
 
     struct Node* temp = finished_queue.head;
     int total_waiting = 0;
     float total_wta = 0;
+    float total_runtime = 0;
     int processes_size = finished_queue.size;
     int j = processes_size;
     while(j != 0)
     {
         total_waiting += temp ->processInfo.waitingTime;
         total_wta += temp->processInfo.weightedTA;
+        total_runtime += temp ->processInfo.runningtime;
         temp = temp->next;
         j--;
     }
     float avg_waiting = (float)total_waiting / processes_size;
     float avg_ta = total_wta / processes_size;
-    fprintf(schedulerPerfFile, "CPU utilization = %0.2f%%\n", 100.00);
+    float utilization = total_runtime / (getClk() - 1) * 100;
+
+    double sum_dev = 0;
+    temp = finished_queue.head;
+    j = processes_size;
+    while(j != 0)
+    {
+        sum_dev += (temp -> processInfo.weightedTA - avg_ta) * (temp -> processInfo.weightedTA - avg_ta) ;
+        temp = temp -> next;
+        j--;
+    }
+    double std_dev = sqrt(sum_dev / processes_size);
+
+    fprintf(schedulerPerfFile, "CPU utilization = %0.2f%%\n", utilization);
     fprintf(schedulerPerfFile, "Avg WTA = %0.2f\n", avg_ta);
     fprintf(schedulerPerfFile, "Avg Waiting = %0.2f\n", avg_waiting);
-    fprintf(schedulerPerfFile, "Std WTA = %0.2f\n", 0.34);
-    printf("holllaaa\n");
+    fprintf(schedulerPerfFile, "Std WTA = %0.2f\n", std_dev);
+    //printf("holllaaa\n");
     fclose(schedulerLogFile);
     fclose(schedulerPerfFile);
 
 
     
 }
+
+void finish_handler(int signum)
+{
+    
+    printf("A Process finished execution at %d\n", getClk());
+    signal(SIGUSR1, finish_handler);    
+
+}
+
+void child_handler(int signum)
+{
+    int pid, stat_loc;
+
+    //printf("Child has sent a SIGCHLD signal #%d\n",signum);
+
+    //printf("Child has sent a SIGCHLD signal #%d\n",signum);
+
+    pid = wait(&stat_loc);
+    if(pid!= 0)
+    {
+        if(!(stat_loc & 0x00FF))
+            printf("Process %d finished execution\tcurrent time is %d\nTerminating...\n", stat_loc>>8, getClk());
+    }
+    signal(SIGCHLD, child_handler);    
+
+}
+
 
 bool startsWith(const char *a, const char *b)
 {
