@@ -48,24 +48,25 @@ int main(int argc, char * argv[])
     }
     printf("Scheduler: Message Queue ID = %d\n", msgq_id);
 
-
+/*
     while (1)
     {
-        rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, !IPC_NOWAIT);
+        rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, IPC_NOWAIT);
 
-        if (rec_val == -1)
-            perror("Error in receive");
+        if (rec_val == -1) {
+            //perror("Error in receive");
+        }
         else
             printf("\nProcess with id %d and arrival time %d was received at time %d\n", message.P.id, message.P.arrivalTime, getClk());
     }
-
+*/
 
     if(!strcmp(argv[1], "1"))
     {
         printf("\nScheduler: Non-preemptive Highest Priority First (HPF) \n");
         //TODO
         //Add Algorithm function call
-        //HPF();
+        HPF();
     }
 
     else if(!strcmp(argv[1], "2"))
@@ -104,30 +105,29 @@ void HPF() {
     int c = 0;
 
     while (1)
-    {
-        while (1)
-        {
+    {    
+
             rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, IPC_NOWAIT);
+            //printf("Recieving processes\n");
 
             if (rec_val == -1) {
                 //perror("Error in receive");
             }
 
             else {
-                printf("\nProcess with id %d and arrival time %d was received at time %d with priority %d\n", message.P.id, message.P.arrivalTime, getClk(), message.P.priority);
-                printf("Placing process in ready queue\n");
-                insertWithPriority(&ready_queue, message.P);
-                printf("Done placing\n");
-                printf("Printing list\n");
-                printLinkedList(&ready_queue);
-                printf("\n%d\n", c++);
-                printf("Done\n");
+                printf("Message Recieved\n");
 
+
+                    insertWithPriority(&ready_queue, message.P);
+                    
+                    printLinkedList(&ready_queue);
+
+
+                }
             
             
-            }
-        }
-
+            
+        
     }
  
 }
