@@ -140,7 +140,7 @@ int main(int argc, char * argv[])
 
     while (processes.head != NULL)
     {
-        /*
+        
         clk = getClk();
         if(processes.head->data.arrivalTime > clk)
         {
@@ -158,7 +158,7 @@ int main(int argc, char * argv[])
                 }
 
             }
-        }*/
+        }
     }
     sleep(10);
     msgctl(msgq_id, IPC_RMID, (struct msqid_ds *)0);
@@ -172,10 +172,10 @@ bool sendProcessToScheduler(struct Process* p, int* msgq_id)
     struct msgbuff message;
     message.P = *p;
 
-    send_val = msgsnd(*msgq_id, &message, sizeof(message.P), !IPC_NOWAIT);
+    send_val = msgsnd(*msgq_id, &message, sizeof(message.P), IPC_NOWAIT);
     if (send_val == -1)
     {
-        perror("Errror in send");
+        //perror("Errror in send");
         return false;
     }
     return true;
