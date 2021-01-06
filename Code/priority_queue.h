@@ -1,19 +1,20 @@
 //Priority Ready Queue 
 #include <stdio.h> 
 #include <stdlib.h> 
+#include "headers.h"
 
+/*
 //Process control block for a process
 struct Process {
 	int id;
 	int arrivalTime;
 	int priority;
-	bool isRunning;
 	int executionTime;
     int remainingTime;
     int waitingTime;
-    bool isFinished;
-    bool isReady;
+
 };
+*/
 
 struct Node {
     struct Process processInfo;
@@ -30,7 +31,7 @@ struct LinkedList {
     
     
 // Inserts a process to the most suited position in the list according to its priority
-void insert(struct LinkedList* ProcessesList, struct Process newProcess) {
+void insertWithPriority(struct LinkedList* ProcessesList, struct Process newProcess) {
         
     struct Node * newProcessNode;
     newProcessNode = (struct Node*)malloc(sizeof(struct Node));
@@ -81,7 +82,7 @@ void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess) {
         return;
     }
 
-    if (newProcess.executionTime < ProcessesList->head->processInfo.executionTime) {                                   // new process has the highest priority and should be inserted first in linked list
+    if (newProcess.runTime < ProcessesList->head->processInfo.runTime) {                                   // new process has the highest priority and should be inserted first in linked list
         newProcessNode->next = ProcessesList->head;
         ProcessesList->head = newProcessNode;
         return;
@@ -94,7 +95,7 @@ void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess) {
 
         while (ProcessesList->head->next != NULL) {                                                 // as long as the end of the linked list hasn't been reached 
                 
-            if (newProcessNode->processInfo.executionTime <= pointerToProcessNode->next->processInfo.executionTime) {     // if position isn't found yet
+            if (newProcessNode->processInfo.runTime <= pointerToProcessNode->next->processInfo.runTime) {     // if position isn't found yet
                 
                 struct Node * temp = pointerToProcessNode->next;
                 pointerToProcessNode->next = newProcessNode;                           // move node pointer to the next node
@@ -161,7 +162,7 @@ void bubbleSort_srtn(struct LinkedList *L)
         while (ptr1->next != lptr) 
         { 
             /*HERE EXECUTION TIME IS USED IN CASE OF SRTN, CAN BE SWAPPED FOR PRIORITY*/
-            if (ptr1->processInfo.executionTime > ptr1->next->processInfo.executionTime) //If process closer to head bigger than its next, swap
+            if (ptr1->processInfo.runTime > ptr1->next->processInfo.runTime) //If process closer to head bigger than its next, swap
             {  
                 swapnodes(ptr1, ptr1->next); 
                 swapped = 1; 
@@ -194,7 +195,7 @@ void bubbleSort_desc(struct LinkedList *L)
         while (ptr1->next != lptr) 
         { 
             /*HERE EXECUTION TIME IS USED IN CASE OF SRTN, CAN BE SWAPPED FOR PRIORITY*/
-            if (ptr1->processInfo.executionTime < ptr1->next->processInfo.executionTime) //If process closer to head bigger than its next, swap
+            if (ptr1->processInfo.runTime < ptr1->next->processInfo.runTime) //If process closer to head bigger than its next, swap
             {  
                 swapnodes(ptr1, ptr1->next); 
                 swapped = 1; 
@@ -206,3 +207,21 @@ void bubbleSort_desc(struct LinkedList *L)
     while (swapped); 
 } 
 
+void printLinkedList(struct LinkedList * L) {
+
+    struct Node* N = L->head;
+    
+    if(N != NULL) {
+        do {
+            printf("%d ",N->processInfo.id);
+            printf("%d ",N->processInfo.arrivalTime);
+            printf("%d ",N->processInfo.runTime);
+            printf("%d ",N->processInfo.priority);
+            //printf("%d ",N->processInfo.remainingTime);
+            //printf("%d \n",N->processInfo.waitingTime);
+
+            N = N->next;
+
+        } while(N != NULL);
+    }
+}

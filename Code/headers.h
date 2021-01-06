@@ -1,3 +1,6 @@
+#ifndef _INCL_GUARD
+#define _INCL_GUARD
+
 #include <stdio.h>      //if you don't use scanf/printf change this include
 #include <string.h>
 #include <sys/types.h>
@@ -11,6 +14,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+
+
+struct Process              //struct to hold the information of each process
+{
+    int arrivalTime;
+    int priority;
+    int runTime;
+    int id;
+};
+
 
 typedef short bool;
 #define true 1
@@ -66,3 +79,5 @@ void destroyClk(bool terminateAll)
         killpg(getpgrp(), SIGINT);
     }
 }
+
+#endif

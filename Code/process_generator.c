@@ -1,6 +1,7 @@
 #include "headers.h"
 #define MAXCHAR 300
 
+/*
 struct process              //struct to hold the information of each process
 {
     int arrivaltime;
@@ -8,10 +9,10 @@ struct process              //struct to hold the information of each process
     int runningtime;
     int id;
 };
-
+*/
 struct node                 //struct to gold the information of each node and a pointer to the next and previous nodes in the linkedlist
 {
-    struct process data;
+    struct Process data;
     struct node * next;
     struct node * previous;
 };
@@ -26,10 +27,10 @@ struct linkedlist           //likedlist struct
 struct msgbuff
 {
     long mtype;
-    struct process P;
+    struct Process P;
 };
 
-void addNodeToLikedlistEnd(struct linkedlist* list, struct process processToAdd)
+void addNodeToLikedlistEnd(struct linkedlist* list, struct Process processToAdd)
 {
     struct node * nodeToAdd = (struct node *) malloc(sizeof(struct node));  //create new node and assign the process to it.
     nodeToAdd->data = processToAdd;
@@ -78,7 +79,7 @@ void clearResources(int);
 void readFromFileAndFillList(struct linkedlist* list);
 void writeInFile();
 void chooseAlgorithm(short* algorithmNumber);
-bool sendProcessToScheduler(struct process* p, int* msgq_id); 
+bool sendProcessToScheduler(struct Process* p, int* msgq_id); 
 
 int main(int argc, char * argv[])
 {
@@ -146,15 +147,15 @@ int main(int argc, char * argv[])
     while (processes.head != NULL)
     {
         clk = getClk();
-        if(processes.head->data.arrivaltime > clk)
+        if(processes.head->data.arrivalTime > clk)
         {
-            sleep(processes.head->data.arrivaltime - clk);  //sleep until the arrival time of the next process comes
+            sleep(processes.head->data.arrivalTime - clk);  //sleep until the arrival time of the next process comes
             clk = getClk();
             printf("current time is %d\n", clk);
         }
         else
         {
-            while(processes.head != NULL && processes.head->data.arrivaltime <= clk)
+            while(processes.head != NULL && processes.head->data.arrivalTime <= clk)
             { 
                 if(sendProcessToScheduler(&processes.head->data, &msgq_id))
                 {
@@ -170,7 +171,7 @@ int main(int argc, char * argv[])
     destroyClk(true);
 }
 
-bool sendProcessToScheduler(struct process* p, int* msgq_id)
+bool sendProcessToScheduler(struct Process* p, int* msgq_id)
 {
     int send_val;
     struct msgbuff message;
@@ -233,7 +234,7 @@ void chooseAlgorithm(short* algorithmNumber)
 
 void loadProcess(char str[], struct linkedlist* list)
 {
-    struct process newProcess;
+    struct Process newProcess;
     int init_size = strlen(str);
 	char delim[] = "\t";
 	char *ptr = strtok(str, delim);
@@ -251,12 +252,12 @@ void loadProcess(char str[], struct linkedlist* list)
         }
         else if (i == 1)
         {
-            newProcess.arrivaltime = atoi(my_string);
+            newProcess.arrivalTime = atoi(my_string);
             i ++;
         }
         else if (i == 2)
         {
-            newProcess.runningtime = atoi(my_string);
+            newProcess.runTime = atoi(my_string);
             i ++;
         }
         else if (i == 3)

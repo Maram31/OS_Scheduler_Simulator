@@ -5,7 +5,7 @@ build:
 	gcc process.c -o process.out
 	gcc test_generator.c -o test_generator.out
 	gcc RR_scheduler.c -o RR_scheduler.out
-	gcc srtn_schedular.c -o srtn_schedular.out 
+	#gcc srtn_schedular.c -o srtn_schedular.out 
 
 clean:
 	rm -f *.out  processes.txt
