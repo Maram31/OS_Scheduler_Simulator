@@ -6,44 +6,140 @@
 #define null 0
 #define MAXCHAR 300
 
-/*--------------------------------------- FUNCTIONS START HERE------------------------------------------------*/
-//struct Process pcs[10];             // global
 
 void readFromFileAndFillList(struct LinkedList* list);
 void loadProcess(char str[], struct LinkedList* list);
 void addNodeToLikedlistEnd(struct LinkedList* list, struct Process processToAdd);
 bool startsWith(const char *a, const char *b);
 
+/*---------------------------------------MAIN STARTS HERE------------------------------------------------*/
 
-void readFromFileAndFillList(struct LinkedList* list)
+
+int main()
 {
-    FILE * pFile;
-    char str[MAXCHAR];
-    pFile = fopen("processes.txt", "r");
 
-    if (pFile == NULL){
-        printf("Could not open file");
-        return;
-    }
+    // 1. Read the input files.
+    // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
+    // 3. Initiate and create the scheduler and clock processes.
+    // 4. Use this function after creating the clock process to initialize clock
+    // TODO Generation Main Loop
+    // 5. Create a data structure for processes and provide it with its parameters.
+    // 6. Send the information to the scheduler at the appropriate time.
+    // 7. Clear clock resources
 
-    long long index = 0;
-    while (fgets(str, MAXCHAR, pFile) != NULL)
+
+    struct LinkedList ProcessList = {NULL, NULL, 0};
+    struct LinkedList ready_queue = {NULL, NULL, 0};
+
+    initClk();
+    int x = getClk();       // gets time
+    printf("current time is %d\n", x);
+
+
+    // Assume for now that process list is going to be filled
+    // Will use a message queue to get the variables and create process structs
+
+    readFromFileAndFillList(&ProcessList);
+
+    // SRTN LOGIC
+    // if single process, run it noe
+    // every clk check if new process came
+    // if a process came and has run time less than current process rem time
+    // then sleep the first process 
+    // and fork the new one
+    // & so on   
+
+
+    struct Node * iterator = ProcessList.head;
+    struct Node * current = NULL;
+    struct Node * temp = NULL;
+    int timer;
+    bool currently_occupied = false;
+    int id_occupied;
+    int arrived;
+    while(1)
     {
-        if(!startsWith(str,"#"))
+        arrived = 0;
+        timer = getClk();
+        pid_t pid;
+        // Put process in my ready queue of processes
+        // while not if so that is several processes arrive ta same time
+        while(iterator->processInfo.arrivalTime == timer)
         {
-            loadProcess(str,list);
+            insert_srtn(&ready_queue, iterator->processInfo);
+            bubbleSort_srtn(&ready_queue);
+            iterator = iterator->next; 
+            arrived++;
         }
-        index ++;
+    
+        // TEMP -> TO ITERATE ON READY_QUEUE
+        temp = ready_queue.head; // MOMKEN MALHASH LOZZOOM 
+        //CURRENT TELLS IF A PROCESS IS BEING HANDLED RN
+        // If current is null, or not, --> handle
+        if (!current && !currently_occupied)         
+        {
+            current = ready_queue.head;
+            pid = fork();
+
+            if(pid == 0)
+            {
+                //printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
+                    
+                    //Prepare parameters to be sent to process
+                    char id_param [MAXCHAR] ; 
+                    sprintf(id_param, "%d", current-> processInfo.id);
+                    char running_time_param [MAXCHAR];
+                    sprintf(running_time_param, "%d", current-> processInfo.executionTime);
+                    char arrival_time_param [MAXCHAR];
+                    sprintf(arrival_time_param, "%d", current-> processInfo.executionTime);
+                    //
+                    
+                printf("IN SRTN, current time is %d\tprocess with id %d is now forked\n", timer, current->processInfo.id);
+                return execl("./process.out", "./process.out", id_param, arrival_time_param, running_time_param,(char*)NULL);
+
+
+            }
+            else if(pid == -1)
+            {
+                printf("\nCould not create process!");
+                sleep(2);
+                exit(-1);
+            }
+            else                // nothing to do if parent right?
+            {
+                /* code */
+            }
+            
+
+
+        }
+        else if (current)
+        {
+
+        }
+    
+
+
+
+
+
+
+
     }
-    fclose(pFile);
+
+    
+
+
+
+
+
 }
 
-bool startsWith(const char *a, const char *b)
-{
-   if(strncmp(a, b, strlen(b)) == 0) return 1;
-   return 0;
-}
+//*--------------------------------------- FUNCTIONS START HERE------------------------------------------------*/
+//struct Process pcs[10];             // global
 
+
+// Called by loadProcess 
 void addNodeToLikedlistEnd(struct LinkedList* list, struct Process processToAdd)
 {
     struct Node * nodeToAdd = (struct Node *) malloc(sizeof(struct Node));  //create new node and assign the process to it.
@@ -64,7 +160,7 @@ void addNodeToLikedlistEnd(struct LinkedList* list, struct Process processToAdd)
 
     list->size++;
 }
-
+//Load process called by readfromFIleAndFillList
 void loadProcess(char str[], struct LinkedList* list)
 {
     struct Process newProcess;
@@ -75,7 +171,6 @@ void loadProcess(char str[], struct LinkedList* list)
     int i = 0;
 	while(ptr != NULL)
 	{
-
         char *my_string = malloc(MAXCHAR);
         strcpy(my_string, ptr);
         if(i == 0)
@@ -98,27 +193,44 @@ void loadProcess(char str[], struct LinkedList* list)
             newProcess.priority = atoi(my_string);
             i ++;
         }
-
 		ptr = strtok(NULL, delim);
         free(my_string);
 	}
-
     addNodeToLikedlistEnd(list, newProcess);
 }
 
 
-/*---------------------------------------MAIN STARTS HERE------------------------------------------------*/
-
-
-
-int main()
+bool startsWith(const char *a, const char *b)
 {
-    
-
-
-
-
+   if(strncmp(a, b, strlen(b)) == 0) return 1;
+   return 0;
 }
+
+
+// Called initially in main to fill list
+void readFromFileAndFillList(struct LinkedList* list)
+{
+    FILE * pFile;
+    char str[MAXCHAR];
+    pFile = fopen("processes.txt", "r");
+
+    if (pFile == NULL){
+        printf("Could not open file");
+        return;
+    }
+    long long index = 0;
+    while (fgets(str, MAXCHAR, pFile) != NULL)
+    {
+        if(!startsWith(str,"#"))
+        {
+            loadProcess(str,list);
+        }
+        index ++;
+    }
+    fclose(pFile);
+}
+
+
 
 
 
