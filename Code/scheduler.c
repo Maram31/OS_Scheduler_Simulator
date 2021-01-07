@@ -55,15 +55,13 @@ int main(int argc, char * argv[])
         exit(-1);
     }
     printf("Scheduler: Message Queue ID = %d\n", msgq_id);
-
-/*
-    while (1)
-    {
-        if(!endReceive)
+    /*
+        while(!endReceive)
         {
             rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, IPC_NOWAIT);
 
             if (rec_val == -1) {
+                break;
                 //perror("Error in receive");
             }
             else
@@ -72,6 +70,10 @@ int main(int argc, char * argv[])
                 {
                     endReceive = true;
                     printf("\nScheduler: End Receive message was received\n");
+                }
+                else if(message.P.id==-2)
+                {
+                    break;
                 }
                 else
                 {
@@ -93,17 +95,13 @@ int main(int argc, char * argv[])
                 }
             }
         }
-        else
-        {
-            break;
-        }
         
-    }
+    */
     //To make the scheduler waits until all processes terminates
     pid_t  wpid;
     int status = 0;
     while ((wpid = wait(&status)) > 0); 
-*/
+
 
     if(!strcmp(argv[1], "1"))
     {
@@ -151,12 +149,18 @@ void HPF() {
     while (!endReceive || isEmpty(&ready_queue) == 0)
     {
         
-        if(!endReceive)
+        while(!endReceive)
         {
             rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, IPC_NOWAIT);
 
             if (rec_val == -1) {
                 //perror("Error in receive");
+                break;
+            }
+            else if(message.P.id == -2)
+            {
+                printf("\nScheduler: End Slot Receive message was received\n");
+                break;
             }
             else
             {

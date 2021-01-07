@@ -158,7 +158,17 @@ int main(int argc, char * argv[])
                 {
                     removeHeadNodeFromLikedlist(&processes);
                 }
-
+            }
+            struct Process endProcess;
+            endProcess.id = -2;
+            if(sendProcessToScheduler(&endProcess, &msgq_id))
+            {
+                printf("\nSuccess: End slot message was sent to the scheduler\n");
+            }
+            else
+            {
+                printf("\nFailure: End slot message was sent to the scheduler\n");
+                exit(-1);
             }
         }
     }
