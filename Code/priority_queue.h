@@ -3,18 +3,6 @@
 #include <stdlib.h> 
 #include "headers.h"
 
-/*
-//Process control block for a process
-struct Process {
-	int id;
-	int arrivalTime;
-	int priority;
-	int executionTime;
-    int remainingTime;
-    int waitingTime;
-
-};
-*/
 
 struct Node {
     struct Process processInfo;
@@ -70,6 +58,47 @@ void insertWithPriority(struct LinkedList* ProcessesList, struct Process newProc
         pointerToProcessNode->next= newProcessNode;
     }
  }
+
+// Removes the process with the highest priority form the beginning of the list 
+void removeWithPriority(struct LinkedList * L) {
+    if(L->head != NULL) {
+        struct Node * N = L->head;       
+        L->head = L->head->next;
+        if(L->head != NULL) {
+            L->head->previous = NULL;
+        }
+        free(N);
+    }
+}
+
+
+void printLinkedList(struct LinkedList * L) {
+
+    struct Node* N = L->head;
+    
+    if(N != NULL) {
+        do {
+            printf("%d ",N->processInfo.id);
+            printf("%d ",N->processInfo.arrivalTime);
+            printf("%d ",N->processInfo.runTime);
+            printf("%d \n",N->processInfo.priority);
+            //printf("%d ",N->processInfo.remainingTime);
+            //printf("%d \n",N->processInfo.waitingTime);
+
+            N = N->next;
+
+        } while(N != NULL);
+    }
+}
+
+
+// Check if list is empty
+int isEmpty(struct LinkedList * L) {
+    return (L->head) == NULL;
+}
+
+
+
 
 
 void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess) {
@@ -207,22 +236,3 @@ void bubbleSort_desc(struct LinkedList *L)
     } 
     while (swapped); 
 } 
-
-void printLinkedList(struct LinkedList * L) {
-
-    struct Node* N = L->head;
-    
-    if(N != NULL) {
-        do {
-            printf("%d ",N->processInfo.id);
-            printf("%d ",N->processInfo.arrivalTime);
-            printf("%d ",N->processInfo.runTime);
-            printf("%d \n",N->processInfo.priority);
-            //printf("%d ",N->processInfo.remainingTime);
-            //printf("%d \n",N->processInfo.waitingTime);
-
-            N = N->next;
-
-        } while(N != NULL);
-    }
-}
