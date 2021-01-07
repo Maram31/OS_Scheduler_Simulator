@@ -105,7 +105,7 @@ int main(int argc, char * argv[])
     // 3. Initiate and create the scheduler and clock processes.
     pid=fork();
     if(pid == 0){
-        printf("\nClock Initialization Succes\n"); 
+        printf("\nClock Initialization Succes with pid = %d\n", getpid()); 
         return execl("./clk.out", "./clk.out", (char*) NULL);
     }
     else if(pid == -1)
@@ -118,7 +118,7 @@ int main(int argc, char * argv[])
         pid=fork();
         if(pid == 0){
             
-            printf("\nScheduler Initialization Succes\n");
+            printf("\nScheduler Initialization Succes with pid = %d\n", getpid());
             if(algorithmNumber == 1) return execl("./scheduler.out", "./scheduler.out", "1",(char*) NULL);    
             else if(algorithmNumber == 2) return execl("./scheduler.out", "./scheduler.out", "2",(char*) NULL);   
             else if(algorithmNumber == 3) return execl("./scheduler.out", "./scheduler.out", "3", quantumBuffer,(char*) NULL);
@@ -162,19 +162,29 @@ int main(int argc, char * argv[])
             }
         }
     }
+
+    struct Process endProcess;
+    endProcess.id = -1;
+    if(sendProcessToScheduler(&endProcess, &msgq_id))
+    {
+        printf("\nSuccess: End message was sent to the scheduler\n");
+    }
+    else
+    {
+        printf("\nFailure: End message was sent to the scheduler\n");
+        exit(-1);
+    }
+
     int sid, stat_loc;
-    /*while (1)
+    while (1)                                       //wait until the scheduler terminates
     {
         sid = wait(&stat_loc);
   	    if(!(stat_loc & 0x00FF))
   	        printf("\nA child with pid %d terminated with exit code %d\n", sid, stat_loc>>8);
-        if(sid == )
-    }*/
-    
-   
-
-    sleep(10);
+        if(sid == pid) break;
+    }
     msgctl(msgq_id, IPC_RMID, (struct msqid_ds *)0);
+
     // 7. Clear clock resources
     destroyClk(true);
 }

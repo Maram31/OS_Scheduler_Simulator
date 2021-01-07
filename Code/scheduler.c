@@ -26,7 +26,8 @@ FILE * schedulerPerfFile;
 
 int main(int argc, char * argv[])
 {
-     initClk();
+    bool endReceive = false;
+    initClk();
     //TODO implement the scheduler :)
     //upon termination release the clock resources.
 
@@ -51,14 +52,50 @@ int main(int argc, char * argv[])
 
     while (1)
     {
-        rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, IPC_NOWAIT);
+        if(!endReceive)
+        {
+            rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, IPC_NOWAIT);
 
-        if (rec_val == -1) {
-            //perror("Error in receive");
+            if (rec_val == -1) {
+                //perror("Error in receive");
+            }
+            else
+            {
+                if(message.P.id==-1)
+                {
+                    endReceive = true;
+                    printf("\nScheduler: End Receive message was received\n");
+                }
+                else
+                {
+                    printf("\nScheduler: Process with id %d and arrival time %d was received at time %d\n", message.P.id, message.P.arrivalTime, getClk());
+                    
+                    pid_t pid = fork();
+                    if(pid == 0){
+                        char buffer[10];
+                        sprintf(buffer, "%d", message.P.runTime);
+                        printf("\nProcess Initialization Succes with pid = %d\n", getpid()); 
+                        return execl("./process_ha.out", "./process_ha.out", buffer, (char*) NULL);
+                    }
+                    else if(pid == -1)
+                    {
+                        printf("\nProcess Initialization Error\n");
+                        exit(-1); 
+                    }
+
+                }
+            }
         }
         else
-            printf("\nProcess with id %d and arrival time %d was received at time %d\n", message.P.id, message.P.arrivalTime, getClk());
+        {
+            break;
+        }
+        
     }
+    //To make the scheduler waits until all processes terminates
+    pid_t  wpid;
+    int status = 0;
+    while ((wpid = wait(&status)) > 0); 
 
 
     if(!strcmp(argv[1], "1"))
