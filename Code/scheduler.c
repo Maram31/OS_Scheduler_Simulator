@@ -48,7 +48,7 @@ int main(int argc, char * argv[])
     }
     printf("Scheduler: Message Queue ID = %d\n", msgq_id);
 
-/*
+
     while (1)
     {
         rec_val = msgrcv(msgq_id, &message, sizeof(message.P), 0, IPC_NOWAIT);
@@ -59,14 +59,14 @@ int main(int argc, char * argv[])
         else
             printf("\nProcess with id %d and arrival time %d was received at time %d\n", message.P.id, message.P.arrivalTime, getClk());
     }
-*/
+
 
     if(!strcmp(argv[1], "1"))
     {
         printf("\nScheduler: Non-preemptive Highest Priority First (HPF) \n");
         //TODO
         //Add Algorithm function call
-        HPF();
+        //HPF();
     }
 
     else if(!strcmp(argv[1], "2"))
