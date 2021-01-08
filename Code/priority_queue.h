@@ -101,50 +101,95 @@ int isEmpty(struct LinkedList * L) {
 
 
 
-void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess) {
-        
+void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess) 
+{
     struct Node * newProcessNode;
     newProcessNode = (struct Node*)malloc(sizeof(struct Node));
     newProcessNode->processInfo = newProcess;
-        
-    if (ProcessesList->head == NULL) {                                                                       // linked list is empty so new process is inserted first in list
+
+    // if no nodes yet  
+    if (ProcessesList->head == NULL) 
+    {                                                                       // linked list is empty so new process is inserted first in list
         ProcessesList->head = newProcessNode;
+        ProcessesList->size++;
+        printf("\nProcess with id %d is successfully inserted!", newProcess.id);
         return;
     }
 
+    // if gonna insert at head
     if (newProcess.runTime < ProcessesList->head->processInfo.runTime) {                                   // new process has the highest priority and should be inserted first in linked list
         newProcessNode->next = ProcessesList->head;
         ProcessesList->head = newProcessNode;
+        ProcessesList->size++;
+        printf("\nProcess with id %d is successfully inserted!", newProcess.id);
         return;
     } 
 
-    else {                                                                                       // traverse the linked list to find best position to insert the new process in
-        struct Node * pointerToProcessNode;                                                  // create node pointer to traverse the linked list
+    if (newProcess.runTime > ProcessesList->head->processInfo.runTime)
+    {                                                                                       // traverse the linked list to find best position to insert the new process in
+        struct Node * ptr;                                                  // create node pointer to traverse the linked list
+        ptr = ProcessesList->head;                                                      // initially pointing to beginning of linked list
 
-        pointerToProcessNode = ProcessesList->head;                                                      // initially pointing to beginning of linked list
-
-        while (ProcessesList->head->next != NULL) {                                                 // as long as the end of the linked list hasn't been reached 
-                
-            if (newProcessNode->processInfo.runTime <= pointerToProcessNode->next->processInfo.runTime) {     // if position isn't found yet
-                
-                struct Node * temp = pointerToProcessNode->next;
-                pointerToProcessNode->next = newProcessNode;                           // move node pointer to the next node
-                newProcessNode->next = temp;
-                // delete temp will delete node?
-            
+        // if 1 node and insert not at head
+        if(!ptr->next)
+        {
+            ProcessesList->head->next = newProcessNode;  
+            ProcessesList->size++;
+            printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+            return;
+        }
+        int inserted = 0;
+        while (ptr->next) 
+        {                                                
+            if (newProcess.runTime >= ptr->processInfo.runTime &&  newProcess.runTime <= ptr->next->processInfo.runTime ) 
+            {  
+                struct Node * temp = newProcessNode;            //create a temp node points to new process
+                temp->next = ptr->next;                         // now make the new pcs point to next of the ptr
+                ptr->next = temp;                               // then make the next of the ptr be the temp
+                ProcessesList->size++;
+                printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+                return;
             }
-                
-            else {                                                                           // position is found
-                break;                                                        
-            }
 
+            //reached el end, insert w 5alas at the end
+            /*
+            if(!ptr->next)
+            {
+                struct Node * ptrtemp = ptr;
+                ptrtemp->next = newProcessNode;
+                newProcessNode->next = NULL;
+                ProcessesList->size++;
+                printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+                return;
+            }
+            */
+            ptr = ptr->next;
         }
 
-        ///////////////////////NOT SURE OF THIS
-        //newProcessNode->next = pointerToProcessNode->next;                                   // insert new process either at the end of the list or at the chosen position
-        //pointerToProcessNode->next= newProcessNode;
+        // didnt return therefore reached end of list
+        struct Node * ptrtemp = ptr;
+        ptrtemp->next = newProcessNode;
+        newProcessNode->next = NULL;
+        ProcessesList->size++;
+        printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+        return;
+
+
     }
  }
+
+//debugging
+void presentid(struct LinkedList * L) {
+
+    struct Node* N = L->head;
+    printf("\nPresent ids are:"); 
+    if(N != NULL) {
+        do {
+            printf("%d ",N->processInfo.id);
+            N = N->next;
+        } while(N != NULL);
+    }
+}
 
 
 /* function to swap data of two nodes a and b*/
