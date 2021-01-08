@@ -171,7 +171,7 @@ void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess)
         ptrtemp->next = newProcessNode;
         newProcessNode->next = NULL;
         ProcessesList->size++;
-        printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+        //printf("\nProcess with id %d is successfully inserted!", newProcess.id);
         return;
 
 
