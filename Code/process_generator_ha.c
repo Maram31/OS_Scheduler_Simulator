@@ -152,6 +152,8 @@ int main(int argc, char * argv[])
         }
         else
         {
+            kill(pid, SIGUSR2);
+
             while(processes.head != NULL && processes.head->data.arrivalTime <= clk)
             { 
                 if(sendProcessToScheduler(&processes.head->data, &msgq_id))
@@ -173,8 +175,10 @@ int main(int argc, char * argv[])
         }
     }
 
+    sleep(10);
     struct Process endProcess;
     endProcess.id = -1;
+    kill(pid, SIGUSR2);
     if(sendProcessToScheduler(&endProcess, &msgq_id))
     {
         printf("\nSuccess: End message was sent to the scheduler\n");
@@ -205,7 +209,7 @@ bool sendProcessToScheduler(struct Process* p, int* msgq_id)
     struct msgbuff message;
     message.P = *p;
 
-    send_val = msgsnd(*msgq_id, &message, sizeof(message.P), IPC_NOWAIT);
+    send_val = msgsnd(*msgq_id, &message, sizeof(message.P), !IPC_NOWAIT);
     if (send_val == -1)
     {
         //perror("Errror in send");

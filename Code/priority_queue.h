@@ -88,7 +88,7 @@ void printLinkedList(struct LinkedList * L) {
             N = N->next;
 
         } while(N != NULL);
-    }
+    } printf("\n\n");
 }
 
 
