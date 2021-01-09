@@ -147,14 +147,12 @@ void runProcessHPF(int clk)
         busy = 1;
         currentProcess = ready_queue.head->processInfo;
         currentProcess.waitingTime = clk - currentProcess.arrivalTime;
-        char id_param[MAXCHAR];
-        sprintf(id_param, "%d", currentProcess.id);
+
         char running_time_param[MAXCHAR];
         sprintf(running_time_param, "%d", currentProcess.runTime);
-        char arrival_time_param[MAXCHAR];
-        sprintf(arrival_time_param, "%d", currentProcess.arrivalTime);
         char start_time_param[MAXCHAR];
         sprintf(start_time_param, "%d", clk);
+        
         pid_t pid = fork();
         if (pid == 0)
         {
@@ -185,8 +183,8 @@ void handler(int signum)
     //printf("Inside handler\n");
     busy = 0;
     int clk = getClk();
-    //(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround_time, weighted_ta); 
-    //fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, 0);
+    //fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround_time, weighted_ta); 
+    fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, 0);
     if (algorithmNumber == 1)
     {
         runProcessHPF(clk);

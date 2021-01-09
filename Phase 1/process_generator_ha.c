@@ -148,7 +148,7 @@ int main(int argc, char * argv[])
         {
             sleep(processes.head->data.arrivalTime - clk);  //sleep until the arrival time of the next process comes
             clk = getClk();
-            printf("current time is %d\n", clk);
+            //printf("current time is %d\n", clk);
         }
         else
         {
@@ -165,7 +165,7 @@ int main(int argc, char * argv[])
             endProcess.id = -2;
             if(sendProcessToScheduler(&endProcess, &msgq_id))
             {
-                printf("\nSuccess: End slot message was sent to the scheduler\n");
+                //printf("\nSuccess: End slot message was sent to the scheduler\n");
             }
             else
             {
@@ -181,7 +181,7 @@ int main(int argc, char * argv[])
     kill(pid, SIGUSR2);
     if(sendProcessToScheduler(&endProcess, &msgq_id))
     {
-        printf("\nSuccess: End message was sent to the scheduler\n");
+        //printf("\nSuccess: End message was sent to the scheduler\n");
     }
     else
     {
