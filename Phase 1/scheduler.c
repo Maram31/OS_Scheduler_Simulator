@@ -44,7 +44,7 @@ FILE *schedulerLogFile;
 FILE *schedulerPerfFile;
 
 //Temporary till process generator works
-struct LinkedList processes = {NULL, NULL, 0};
+//struct LinkedList processes = {NULL, NULL, 0};
 //
 
 //Ready and running queues to help in context switching
@@ -243,12 +243,13 @@ int RR(int quant)
     int x = getClk();
     
     
-    printf("List size: %d\n", processes.size);
+    //printf("List size: %d\n", processes.size);
     //Debug
     printf("RR current time is %d\n", x);
     //
 
     //Debug
+    /*
     int ahmad = processes.size;
     struct Node* tempppoz = processes.head;
     while (ahmad > 0)
@@ -256,7 +257,7 @@ int RR(int quant)
         printf("Process ID %d\tArrival time %d\tRunning time %d\tStart time %d\tRemaining time %d\tWaiting time %d\tIs started %d\n",tempppoz->processInfo.id, tempppoz->processInfo.arrivalTime, tempppoz->processInfo.runTime, tempppoz ->processInfo.starttime, tempppoz->processInfo.remainingTime, tempppoz->processInfo.waitingTime, tempppoz ->processInfo.isStarted);
         tempppoz = tempppoz -> next;
         ahmad -= 1;
-    }
+    }*/
     //
 
 
@@ -265,7 +266,7 @@ int RR(int quant)
     //
     
     //Pointer to first process in linked list (Will be removed when process generator is finished)
-    struct Node* current_node = processes.head;
+    //struct Node* current_node = processes.head;
     //
 
 
@@ -401,7 +402,7 @@ int RR(int quant)
         //Condition to exit the loop (will be modified)
         if(running_queue.head == NULL && ready_queue.head == NULL /*&& final_size == 0)*/ && endReceive) 
         {
-            printf("zzz %d\n", getClk());
+            //printf("zzz %d\n", getClk());
             break;
         }
         
@@ -425,7 +426,7 @@ int RR(int quant)
     }
     float avg_waiting = (float)total_waiting / processes_size;
     float avg_ta = total_wta / processes_size;
-    float utilization = total_runtime / (getClk() - 1) * 100;
+    float utilization = total_runtime / (getClk()) * 100;
 
     double sum_dev = 0;
     temp = finished_queue.head;
