@@ -3,7 +3,7 @@
 #include <stdlib.h> 
 #include "headers.h"
 
-
+/*
 struct Node {
     struct Process processInfo;
     struct Node * next;
@@ -15,7 +15,7 @@ struct LinkedList {
 	struct Node * tail;
     int size;
 };
-  
+  */
     
     
 // Inserts a process to the most suited position in the list according to its priority

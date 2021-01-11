@@ -26,6 +26,7 @@ struct processData
 
 };*/
 
+/*
 struct Node {
     struct Process processInfo;
     struct Node * next;
@@ -37,7 +38,7 @@ struct LinkedList {
 	struct Node * tail;
     int size;
 };
-
+*/
 
 void insertToQueue(struct LinkedList* ProcessesList, struct Process newProcess) {
         
@@ -103,6 +104,36 @@ void removeFromQueue(struct LinkedList * L, int id) {
             currentNode = NULL;
         }
     }
+    
+    return;
+
+    
+}
+
+
+void removeFromQueueBsck(struct LinkedList * L) {
+    struct Node* currentNode = L->head; //Set the current node to the list head
+
+    if (L->size == 0)
+    {
+        return;
+    }
+    else if(L->size == 1)
+    {
+        L->head = NULL;
+        L->tail = NULL;
+        L->size = 0;
+    }
+    else
+    {
+        struct Node* currentNode = L->tail->previous;
+        L->tail->previous->next = NULL;
+        L->tail = currentNode;
+        L->size -= 1;
+    }
+    
+
+    
     
     return;
 

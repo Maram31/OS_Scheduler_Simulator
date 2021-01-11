@@ -46,6 +46,19 @@ struct Process              //struct to hold the information of each process
     int isStarted;  //
 };
 
+struct Node {
+    struct Process processInfo;
+    struct Node * next;
+    struct Node * previous;
+};
+
+struct LinkedList {
+	struct Node * head;
+	struct Node * tail;
+    int size;
+};
+
+
 ///==============================
 //don't mess with this variable//
 int * shmaddr;                 //
