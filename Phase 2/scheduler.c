@@ -1,5 +1,7 @@
 #include "headers.h"
 #include "priority_queue.h"
+#include "circular_queue.h"
+#include <math.h>
 
 #define MAXCHAR 300
 
@@ -16,6 +18,10 @@ bool endReceive = false;
 int busy = 0;
 struct Process currentProcess;
 short algorithmNumber;
+//Time quantum used for Round Robin
+int time_quantum;
+
+int running_removed = 0; //false
 
 void HPF();
 void runProcessHPF(int clk);
@@ -23,6 +29,8 @@ void handler(int signum);
 void recievingHandler(int signum);
 
 void SRTN();
+
+int RR(int quant);
 
 struct LinkedList ready_queue = {NULL, NULL, 0};
 
@@ -35,6 +43,22 @@ void reportProcessToLogFile(struct Process *P, int state, int clk);
 FILE *schedulerLogFile;
 FILE *schedulerPerfFile;
 
+FILE *memoryLogFile;
+
+//Temporary till process generator works
+//struct LinkedList processes = {NULL, NULL, 0};
+//
+
+//Ready and running queues to help in context switching
+//struct LinkedList ready_queue = {NULL, NULL, 0};
+struct LinkedList running_queue = {NULL, NULL, 0};
+struct LinkedList finished_queue = {NULL, NULL, 0};
+
+//Will be removed
+//Initial version of Round Robin scheduling algorithm with no process communication
+void finish_handler(int signum);
+
+
 int main(int argc, char *argv[])
 {
     algorithmNumber = atoi(argv[1]);
@@ -44,6 +68,9 @@ int main(int argc, char *argv[])
     initClk();
     //TODO implement the scheduler :)
     //upon termination release the clock resources.
+    
+    memoryLogFile = fopen("memory.log", "w");
+    fprintf(memoryLogFile, "#At time x allocated y bytes for process z from i to j");
 
     schedulerLogFile = fopen("scheduler.log", "w");
     schedulerPerfFile = fopen("scheduler.perf", "w");
@@ -84,9 +111,13 @@ int main(int argc, char *argv[])
     else if (!strcmp(argv[1], "3"))
     {
         printf("\nScheduler: Round Robin (RR) with Quantum %d \n", atoi(argv[2]));
+        RR(atoi(argv[2]));
+        
         //TODO
         //Add Algorithm function call
     }
+
+    fclose(memoryLogFile);
 
     fclose(schedulerLogFile);
     fclose(schedulerPerfFile);
@@ -147,17 +178,17 @@ void runProcessHPF(int clk)
         busy = 1;
         currentProcess = ready_queue.head->processInfo;
         currentProcess.waitingTime = clk - currentProcess.arrivalTime;
-        
+
         char running_time_param[MAXCHAR];
         sprintf(running_time_param, "%d", currentProcess.runTime);
         char start_time_param[MAXCHAR];
         sprintf(start_time_param, "%d", clk);
-
+        
         pid_t pid = fork();
         if (pid == 0)
         {
             currentProcess.systempid = getpid();
-            execl("./process.out", "./process.out", running_time_param, start_time_param, (char *)NULL);
+            execl("./process_mh.out", "./process_mh.out", running_time_param, start_time_param, (char *)NULL);
         }
         else if (pid == -1)
         {
@@ -192,6 +223,248 @@ void handler(int signum)
     signal(SIGUSR1, handler);
 }
 
+int RR(int quant)
+{ 
+    signal(SIGUSR1, finish_handler);
+    //signal(SIGCHLD, child_handler);
+    //
+    
+
+    //Process ID for forking
+    pid_t pid;
+
+    
+    //temp value
+    time_quantum = quant;
+    printf("time quantum: %d\n", time_quantum);
+    //
+    
+    //Will be removed
+    int final_size = 5;
+
+
+    // Use this function after creating the clock process to initialize clock
+    initClk();
+    // To get time use this
+    int x = getClk();
+    
+    
+    //printf("List size: %d\n", processes.size);
+    //Debug
+    printf("RR current time is %d\n", x);
+    //
+
+    //Debug
+    /*
+    int ahmad = processes.size;
+    struct Node* tempppoz = processes.head;
+    while (ahmad > 0)
+    {
+        printf("Process ID %d\tArrival time %d\tRunning time %d\tStart time %d\tRemaining time %d\tWaiting time %d\tIs started %d\n",tempppoz->processInfo.id, tempppoz->processInfo.arrivalTime, tempppoz->processInfo.runTime, tempppoz ->processInfo.starttime, tempppoz->processInfo.remainingTime, tempppoz->processInfo.waitingTime, tempppoz ->processInfo.isStarted);
+        tempppoz = tempppoz -> next;
+        ahmad -= 1;
+    }*/
+    //
+
+
+    //Variable to loop every 1 second
+    int prev_time = x;
+    //
+    
+    //Pointer to first process in linked list (Will be removed when process generator is finished)
+    //struct Node* current_node = processes.head;
+    //
+
+
+    struct Node * previous_head = NULL;//malloc(sizeof(struct Node));
+    struct Node * current_head = NULL;
+    
+    int flag_first_time = 0;
+
+    int start_time_prev_process = -1;
+
+    //Logic of algorithm
+    while (1)
+    {
+        if(running_queue.head != NULL && (getClk() - running_queue.head->processInfo.previousstart == time_quantum))
+        {
+            //printf("current time is %d\tprocess with id %d has start time %d\n", x, running_queue.head->processInfo.id, running_queue.head->processInfo.starttime);
+            struct Node * temp_node = running_queue.head;
+            temp_node->processInfo.remainingTime -= time_quantum;
+            removeFromQueue(&running_queue, temp_node->processInfo.id );
+            
+            //printf("Forked pid remove: %d\n", temp_node -> processInfo.systempid);
+            //printf("Debug current time is %d\n", getClk());
+            if(temp_node->processInfo.remainingTime > 0)
+            {
+                temp_node ->processInfo.previousstop = getClk();
+                fprintf(schedulerLogFile, "At time %d process %d stopped arr %d total %d remain %d wait %d\n", getClk(), temp_node ->processInfo.id, temp_node ->processInfo.arrivalTime, temp_node ->processInfo.runTime, temp_node ->processInfo.remainingTime, temp_node->processInfo.waitingTime);
+                insertToQueue(&ready_queue, temp_node->processInfo);
+                //kill(temp_node->processInfo.systempid, SIGSTOP);
+                kill(temp_node->processInfo.systempid, SIGUSR1);
+            }
+            else
+            {
+                int turnaround_time = getClk() - temp_node->processInfo.arrivalTime;
+                float weighted_ta = (float)turnaround_time / temp_node -> processInfo .runTime;  
+                temp_node ->processInfo .weightedTA = weighted_ta;
+                temp_node ->processInfo.remainingTime = 0;
+                insertToQueue(&finished_queue, temp_node -> processInfo);
+                fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), temp_node ->processInfo.id, temp_node ->processInfo.arrivalTime, temp_node ->processInfo.runTime, temp_node ->processInfo.remainingTime, temp_node->processInfo.waitingTime, turnaround_time, weighted_ta); 
+                //printf("Goodbye process %d\n", temp_node -> processInfo.id);
+                final_size -= 1;
+                
+                }
+            //printf("Hellloo\n");
+        }
+        //
+        //printf("Hello 2!\n");
+        current_head = ready_queue.head;
+
+        //Move process from ready state to running state
+        if(current_head != NULL && running_queue.head == NULL)//&& running_queue.size == 0)// && (start_time_prev_process == -1 || getClk() - start_time_prev_process >= time_quantum))
+        {
+            start_time_prev_process = getClk();
+            removeFromQueue(&ready_queue, current_head-> processInfo.id );
+            //printf("Is starteddddd? %d\n", current_head->processInfo.isStarted);
+            flag_first_time = current_head->processInfo.isStarted;
+            
+            
+            current_head -> processInfo.starttime = getClk();
+            if(current_head ->processInfo.remainingTime - time_quantum < 0)
+            {
+                current_head -> processInfo.previousstart = getClk() + current_head ->processInfo.remainingTime - time_quantum;
+
+            }
+            else
+                current_head -> processInfo.previousstart = getClk() ;
+            current_head -> processInfo.isStarted = 1;
+            
+            previous_head = current_head;
+            current_head = ready_queue.head;
+
+            //current_head ->processInfo.isRunning = 1;
+            //printf("Is started? %d\n", previous_head->processInfo.isStarted);
+            if(flag_first_time == 0)
+            {
+                pid=fork();
+                
+                if(pid == 0){
+                    //printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
+                    
+                    //Prepare parameters to be sent to process
+                    char id_param [MAXCHAR] ; 
+                    sprintf(id_param, "%d", previous_head -> processInfo.id);
+                    char running_time_param [MAXCHAR];
+                    sprintf(running_time_param, "%d", previous_head -> processInfo.runTime);
+                    char arrival_time_param [MAXCHAR];
+                    sprintf(arrival_time_param, "%d", previous_head -> processInfo.arrivalTime);
+                    //
+                    char start_time_param [MAXCHAR];
+                    sprintf(start_time_param, "%d", getClk());
+                    return execl("./process.out", "./process.out", id_param, arrival_time_param, running_time_param, start_time_param,(char*)NULL);
+                }
+                else if(pid == -1)
+                {
+                    printf("\nClock Initialization Error\n");
+                    exit(-1); 
+                }
+                else
+                {
+                    
+                    //current_head ->processInfo.isRunning = true;
+                    previous_head -> processInfo.starttime = getClk();
+                    previous_head ->processInfo.waitingTime = getClk() - previous_head->processInfo.arrivalTime;
+                    //printf("Forked pid insert: %d\n", pid);
+                    previous_head->processInfo.systempid = pid;
+                    fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d\n", getClk(), previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.runTime, previous_head->processInfo.waitingTime);
+                    insertToQueue(&running_queue, previous_head->processInfo);
+                    currentProcess = previous_head->processInfo;
+                }
+            }
+            else
+            {
+                previous_head->processInfo.waitingTime += getClk() - (previous_head->processInfo.previousstop) ;
+                fprintf(schedulerLogFile, "At time %d process %d resumed arr %d total %d remain %d wait %d\n", getClk(), previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.remainingTime, previous_head->processInfo.waitingTime);
+                insertToQueue(&running_queue, previous_head->processInfo);
+                kill(previous_head->processInfo.systempid, SIGCONT);
+                currentProcess = previous_head->processInfo;
+                //kill(previous_head->processInfo.systempid, SIGUSR2);
+                //printf("Resume\n");
+            }
+            
+
+        }
+
+        //printf("Hello 3!\n");
+        
+
+       //wait for a second to pass
+       /*
+        while(getClk() - prev_time == 0);
+        x = getClk();
+        prev_time = x;
+        */
+        //Condition to exit the loop (will be modified)
+        if(running_queue.head == NULL && ready_queue.head == NULL /*&& final_size == 0)*/ && endReceive) 
+        {
+            //printf("zzz %d\n", getClk());
+            break;
+        }
+        
+
+    }
+    //printf("Hello 4!\n");
+
+    struct Node* temp = finished_queue.head;
+    int total_waiting = 0;
+    float total_wta = 0;
+    float total_runtime = 0;
+    int processes_size = finished_queue.size;
+    int j = processes_size;
+    while(j != 0)
+    {
+        total_waiting += temp ->processInfo.waitingTime;
+        total_wta += temp->processInfo.weightedTA;
+        total_runtime += temp ->processInfo.runTime;
+        temp = temp->next;
+        j--;
+    }
+    float avg_waiting = (float)total_waiting / processes_size;
+    float avg_ta = total_wta / processes_size;
+    float utilization = total_runtime / (getClk()) * 100;
+
+    double sum_dev = 0;
+    temp = finished_queue.head;
+    j = processes_size;
+    while(j != 0)
+    {
+        sum_dev += (temp -> processInfo.weightedTA - avg_ta) * (temp -> processInfo.weightedTA - avg_ta) ;
+        temp = temp -> next;
+        j--;
+    }
+    double std_dev = sqrt(sum_dev / processes_size);
+
+    fprintf(schedulerPerfFile, "CPU utilization = %0.2f%%\n", utilization);
+    fprintf(schedulerPerfFile, "Avg WTA = %0.2f\n", avg_ta);
+    fprintf(schedulerPerfFile, "Avg Waiting = %0.2f\n", avg_waiting);
+    fprintf(schedulerPerfFile, "Std WTA = %0.2f\n", std_dev);
+    //printf("holllaaa\n");
+    //fclose(schedulerLogFile);
+    //fclose(schedulerPerfFile);
+
+}
+///////////////////////////////////////////////////////////////////////
+void finish_handler(int signum)
+{
+    
+    printf("A Process finished execution at %d\n", getClk());
+    signal(SIGUSR1, finish_handler);    
+
+}
+
+//////////////////////////////////////////////////////
+
 void recievingHandler(int signum)
 {
 
@@ -206,8 +479,7 @@ void recievingHandler(int signum)
             }
             */
         if (message.P.id == -2)
-        {
-            //printf("\nScheduler: End Slot Receive message was received\n");
+        {   
             break;
         }
         else
@@ -232,6 +504,27 @@ void recievingHandler(int signum)
                     else if (algorithmNumber == 2)
                     {
                         insert_srtn(&ready_queue_SRTN, message.P);
+                    }
+                    else if(algorithmNumber == 3)
+                    {
+                        
+                        //printf("Process ID:%d\n", message.P.id);
+                        if(ready_queue.size != 0 && getClk() - ready_queue.tail->processInfo.previousstart == time_quantum && ready_queue.tail->processInfo.previousstart != -1)
+                        {
+                            //printf("Case 2:\n");
+                            struct Process temp = ready_queue.tail->processInfo;
+                            //printf("temp id: %d\n", temp.id);
+                            removeFromQueueBsck(&ready_queue);
+                            insertToQueue(&ready_queue, message.P);  
+                            insertToQueue(&ready_queue, temp);  
+                        }
+                        else
+                        {
+                            //printf("Case 3:\n");
+                            insertToQueue(&ready_queue, message.P);   
+                        }
+                    
+                           
                     }
 
             }

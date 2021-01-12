@@ -1,30 +1,30 @@
 #include "headers.h"
 #define MAXCHAR 300
-
-struct node                 //struct to gold the information of each node and a pointer to the next and previous nodes in the linkedlist
+/*
+struct Node                 //struct to gold the information of each Node and a pointer to the next and previous Nodes in the LinkedList
 {
-    struct Process data;
-    struct node * next;
-    struct node * previous;
+    struct Process processInfo;
+    struct Node * next;
+    struct Node * previous;
 };
 
-struct linkedlist           //likedlist struct
+struct LinkedList           //likedlist struct
 {
-	struct node * head;
-	struct node * tail;
+	struct Node * head;
+	struct Node * tail;
     int size;
 };
-
+*/
 struct msgbuff
 {
     long mtype;
     struct Process P;
 };
 
-void addNodeToLikedlistEnd(struct linkedlist* list, struct Process processToAdd)
+void addNodeToLikedlistEnd(struct LinkedList* list, struct Process processToAdd)
 {
-    struct node * nodeToAdd = (struct node *) malloc(sizeof(struct node));  //create new node and assign the process to it.
-    nodeToAdd->data = processToAdd;
+    struct Node * nodeToAdd = (struct Node *) malloc(sizeof(struct Node));  //create new node and assign the process to it.
+    nodeToAdd->processInfo = processToAdd;
     nodeToAdd->next = NULL;
 
     if(list->head == NULL)
@@ -43,7 +43,7 @@ void addNodeToLikedlistEnd(struct linkedlist* list, struct Process processToAdd)
 }
 
 
-void removeHeadNodeFromLikedlist(struct linkedlist* list)
+void removeHeadNodeFromLikedlist(struct LinkedList* list)
 {
     if(list->head == NULL)
     {
@@ -57,7 +57,7 @@ void removeHeadNodeFromLikedlist(struct linkedlist* list)
     }
     else
     {
-        struct node * tempNode = (struct node *) malloc(sizeof(struct node));  //create new node and assign the process to it.
+        struct Node * tempNode = (struct Node *) malloc(sizeof(struct Node));  //create new node and assign the process to it.
         tempNode = list->head;
         list->head = list->head->next;
         free(tempNode);
@@ -67,7 +67,7 @@ void removeHeadNodeFromLikedlist(struct linkedlist* list)
 
 
 void clearResources(int);
-void readFromFileAndFillList(struct linkedlist* list);
+void readFromFileAndFillList(struct LinkedList* list);
 void writeInFile();
 void chooseAlgorithm(short* algorithmNumber, int* quantum);
 bool sendProcessToScheduler(struct Process* p, int* msgq_id); 
@@ -76,7 +76,7 @@ int main(int argc, char * argv[])
 {
     pid_t pid;
     signal(SIGINT, clearResources);
-    struct linkedlist processes = {NULL, NULL, 0};
+    struct LinkedList processes = {NULL, NULL, 0};
     
     key_t key_id;
     int msgq_id;
@@ -94,6 +94,19 @@ int main(int argc, char * argv[])
     // 1. Read the input files.
     readFromFileAndFillList(&processes);
    
+    //Debugg//////////////////
+    /*
+    struct Node* node_debug = processes.head;  
+    while (node_debug != NULL)
+    {
+        printf("Process with id %d , arrival time %d , runtime %d , priority %d , memsize %d \n", node_debug->processInfo.id,  node_debug->processInfo.arrivalTime,  node_debug->processInfo.runTime,  node_debug->processInfo.priority,  node_debug->processInfo.memsize);
+        //Done
+        node_debug = node_debug->next;
+    }
+
+    while(1);  
+    */
+    ////////////////
 
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     short algorithmNumber;
@@ -144,9 +157,9 @@ int main(int argc, char * argv[])
 
     while (processes.head != NULL)
     {
-        if(processes.head->data.arrivalTime > clk)
+        if(processes.head->processInfo.arrivalTime > clk)
         {
-            sleep(processes.head->data.arrivalTime - clk);  //sleep until the arrival time of the next process comes
+            sleep(processes.head->processInfo.arrivalTime - clk);  //sleep until the arrival time of the next process comes
             clk = getClk();
             //printf("current time is %d\n", clk);
         }
@@ -154,9 +167,9 @@ int main(int argc, char * argv[])
         {
             kill(pid, SIGUSR2);
 
-            while(processes.head != NULL && processes.head->data.arrivalTime <= clk)
+            while(processes.head != NULL && processes.head->processInfo.arrivalTime <= clk)
             { 
-                if(sendProcessToScheduler(&processes.head->data, &msgq_id))
+                if(sendProcessToScheduler(&processes.head->processInfo, &msgq_id))
                 {
                     removeHeadNodeFromLikedlist(&processes);
                 }
@@ -273,7 +286,7 @@ void chooseAlgorithm(short* algorithmNumber, int* quantum)
     
 }
 
-void loadProcess(char str[], struct linkedlist* list)
+void loadProcess(char str[], struct LinkedList* list)
 {
     struct Process newProcess;
     int init_size = strlen(str);
@@ -307,16 +320,22 @@ void loadProcess(char str[], struct linkedlist* list)
             newProcess.priority = atoi(my_string);
             i ++;
         }
+        else if(i == 4)
+        {
+            newProcess.memsize = atoi(my_string);
+            i ++;
+        }
 
 		ptr = strtok(NULL, delim);
         free(my_string);
 	}
     newProcess.starttime = -1;
     newProcess.isStarted = 0;
+    newProcess.previousstart = -1;
     addNodeToLikedlistEnd(list, newProcess);
 }
 
-void readFromFileAndFillList(struct linkedlist* list)
+void readFromFileAndFillList(struct LinkedList* list)
 {
     FILE * pFile;
     char str[MAXCHAR];

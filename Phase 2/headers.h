@@ -27,6 +27,9 @@ typedef short bool;
 
 struct Process              //struct to hold the information of each process
 {
+    //Memory
+    int memsize;
+    //
     int id;
     int arrivalTime; //
     int priority;
@@ -45,6 +48,19 @@ struct Process              //struct to hold the information of each process
     bool isRunning;
     int isStarted;  //
 };
+
+struct Node {
+    struct Process processInfo;
+    struct Node * next;
+    struct Node * previous;
+};
+
+struct LinkedList {
+	struct Node * head;
+	struct Node * tail;
+    int size;
+};
+
 
 ///==============================
 //don't mess with this variable//
