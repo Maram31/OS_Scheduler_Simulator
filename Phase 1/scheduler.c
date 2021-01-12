@@ -503,7 +503,7 @@ void recievingHandler(int signum)
                     {
                         
                         //printf("Process ID:%d\n", message.P.id);
-                        if(ready_queue.size != 0 && getClk() - ready_queue.tail->processInfo.previousstart == time_quantum)
+                        if(ready_queue.size != 0 && getClk() - ready_queue.tail->processInfo.previousstart == time_quantum && ready_queue.tail->processInfo.previousstart != -1)
                         {
                             //printf("Case 2:\n");
                             struct Process temp = ready_queue.tail->processInfo;

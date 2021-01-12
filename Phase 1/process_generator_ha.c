@@ -313,6 +313,7 @@ void loadProcess(char str[], struct linkedlist* list)
 	}
     newProcess.starttime = -1;
     newProcess.isStarted = 0;
+    newProcess.previousstart = -1;
     addNodeToLikedlistEnd(list, newProcess);
 }
 
