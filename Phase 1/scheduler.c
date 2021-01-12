@@ -1,7 +1,7 @@
 #include "headers.h"
 #include "priority_queue.h"
 #include "circular_queue.h"
-#include <math.h>
+#include "math.h"
 
 #define MAXCHAR 300
 
@@ -16,8 +16,20 @@ int msgq_id, rec_val;
 struct msgbuff message;
 bool endReceive = false;
 int busy = 0;
+int handler_finished = 0;
+
 struct Process currentProcess;
 short algorithmNumber;
+
+float *WTA;    //array to store weighted turnaround for every process
+int total_waiting = 0;
+float total_wta = 0;
+float total_runtime = 0;
+int processes_count = 0;
+float utilization;
+int total_turnaround = 0;
+float total_weighted_turnaround = 0;
+
 //Time quantum used for Round Robin
 int time_quantum;
 
@@ -59,6 +71,8 @@ void finish_handler(int signum);
 
 int main(int argc, char *argv[])
 {
+    WTA = (float *) malloc(sizeof(float*));
+
     algorithmNumber = atoi(argv[1]);
     signal(SIGUSR1, handler);
     signal(SIGUSR2, recievingHandler);
@@ -156,13 +170,37 @@ void HPF()
 
     //printf("List is %d\n", isEmpty(&ready_queue));
 
-    while (!endReceive || isEmpty(&ready_queue) == 0)
+    while (!endReceive || isEmpty(&ready_queue) == 0 || handler_finished == 0) 
     {
         runProcessHPF(getClk());
     }
     //To make the scheduler waits until all processes terminates
     pid_t wpid;
     int status = 0;
+
+
+    utilization = (total_runtime / getClk()) * 100;
+    float average_waiting = (float)total_waiting/(float)processes_count;
+
+    float average_turnaround = (float)total_turnaround/(float)processes_count;
+
+    float average_weighted_turnaround = (float)total_weighted_turnaround/(float)processes_count;
+    
+
+    float sum_dev = 0;
+
+    for(int i = 0; i < processes_count; i++) {
+        sum_dev += pow((WTA[i]-average_weighted_turnaround), 2);
+    }
+
+    float std_average_weighted_turnaround = sqrt(sum_dev / processes_count);
+
+    fprintf(schedulerPerfFile, "CPU utilization = %0.2f%%\n", utilization);
+    fprintf(schedulerPerfFile, "Avg WTA = %0.2f\n", average_weighted_turnaround);
+    fprintf(schedulerPerfFile, "Avg Waiting = %0.2f\n", average_waiting);  
+    fprintf(schedulerPerfFile, "Std WTA = %0.2f\n", std_average_weighted_turnaround);  
+
+
     while ((wpid = wait(&status)) > 0);
 }
 void runProcessHPF(int clk)
@@ -170,8 +208,12 @@ void runProcessHPF(int clk)
     if (isEmpty(&ready_queue) != 1 && busy == 0)
     {
         busy = 1;
+        handler_finished = 0;
         currentProcess = ready_queue.head->processInfo;
+        total_runtime += currentProcess.runTime;
         currentProcess.waitingTime = clk - currentProcess.arrivalTime;
+        total_waiting += currentProcess.waitingTime;
+        processes_count++;
 
         char running_time_param[MAXCHAR];
         sprintf(running_time_param, "%d", currentProcess.runTime);
@@ -208,10 +250,22 @@ void handler(int signum)
     //printf("Inside handler\n");
     busy = 0;
     int clk = getClk();
+
+
+        
     //fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround_time, weighted_ta); 
     fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, 0);
     if (algorithmNumber == 1)
     {
+        int turnaround = clk - currentProcess.arrivalTime;
+        float weighted_turnaround = (float)turnaround/(float)currentProcess.runTime;
+
+        WTA[processes_count-1] = weighted_turnaround;
+
+        total_turnaround += turnaround;
+        total_weighted_turnaround += weighted_turnaround;
+
+        handler_finished = 1;
         runProcessHPF(clk);
     }
     signal(SIGUSR1, handler);
