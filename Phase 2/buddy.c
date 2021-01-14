@@ -43,7 +43,7 @@ void Buddy(int s)
 	
 }
 
-void allocate(int s)
+int allocate(int s)
 {
 
 	// Calculate index in free list
@@ -73,7 +73,7 @@ void allocate(int s)
 		iterator ->tail = NULL;*/
 		iterator = NULL;
 		printf("Sorry, failed to allocate memory\n");
-		return;
+		return - 1;
 	}
 	//printf("Counter = %d\n",counter);
 	
@@ -134,6 +134,7 @@ void allocate(int s)
 		{
 			//cout << "Sorry, failed to allocate memory\n";
 			printf("Sorry, failed to allocate memory\n");
+			return -1;
 		}
 
 		// If found
@@ -189,6 +190,7 @@ void allocate(int s)
 			insert_to_map(&mp, temp_first, temp_second -temp_first + 1); //my defined map
 		}
 	}
+	return 0;
 }
 
 void deallocate(int id)
@@ -361,45 +363,7 @@ void print()
 int main()
 {
 
-	// Uncomment following code for interactive IO
-    /*
-	int total,c,req;
-	cout<<"Enter Total Memory Size (in Bytes) => ";
-	cin>>total;
-	Buddy(total);
-	label:
-	while(1)
-	{
-		cout<<"\n1. Add Process into Memory\n2. Remove Process \n3. Allocation Map\n4. Exit\n=> ";
-		cin>>c;
-		switch(c)
-		{
-			case 1:
-			cout<<"Enter Process Size (in Bytes) => ";
-			cin>>req;
-			cout<<"\n===>";
-			allocate(req);
-			break;
-
-			case 2:
-			cout<<"Enter Starting Address => ";
-			cin>>req;
-			cout<<"\n===>";
-			deallocate(req);
-			break;
-
-			case 3:
-			//print();
-			break;
-
-			case 4:
-			exit(0);
-			break;
-
-			default:
-			goto label;
-		}
-	}*/
+	int result;
     
 	Buddy(128);
 	
@@ -409,27 +373,99 @@ int main()
 	printf("dehk\n");
 	*/
 	
-	allocate(20);
+	result = allocate(20);
 	print();
-	allocate(15);
+	if(result == -1)
+	{
+		printf("Bad\n");
+	}
+	else
+	{
+		printf("GOOOD\n");
+	}
+	
+	result = allocate(15);
 	print();
-	allocate(10);
+	if(result == -1)
+	{
+		printf("Bad\n");
+	}
+	else
+	{
+		printf("GOOOD\n");
+	}
+	
+	result = allocate(10);
 	print();
-	allocate(25);
+	if(result == -1)
+	{
+		printf("Bad\n");
+	}
+	else
+	{
+		printf("GOOOD\n");
+	}
+	
+	result = allocate(25);
 	print();
-	allocate(80);
+	if(result == -1)
+	{
+		printf("Bad\n");
+	}
+	else
+	{
+		printf("GOOOD\n");
+	}
+	
+	result = allocate(80);
+	if(result == -1)
+	{
+		printf("Bad\n");
+	}
+	else
+	{
+		printf("GOOOD\n");
+	}
+	
 	deallocate(0);
 	print();
 	deallocate(48);
 	print();
-	allocate(8);
+	result = allocate(8);
 	print();
-	allocate(30);
+	if(result == -1)
+	{
+		printf("Bad\n");
+	}
+	else
+	{
+		printf("GOOOD\n");
+	}
+	
+	result = allocate(30);
 	print();
+	if(result == -1)
+	{
+		printf("Bad\n");
+	}
+	else
+	{
+		printf("GOOOD\n");
+	}
+	
 	deallocate(32);
 	print();
-	allocate(15);
+	result = allocate(15);
 	print();
+	if(result == -1)
+	{
+		printf("Bad\n");
+	}
+	else
+	{
+		printf("GOOOD\n");
+	}
+	
 	deallocate(48);
     print();
     deallocate(0);

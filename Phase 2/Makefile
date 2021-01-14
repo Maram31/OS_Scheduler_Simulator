@@ -10,6 +10,7 @@ build:
 	#gcc process_generator_ha.c -o process_generator_ha.out
 	#gcc RR_scheduler.c -o RR_scheduler.out -lm
 	#gcc srtn_schedular.c -o srtn_schedular.out 
+	gcc buddy.c -o buddy.out -lm
 
 clean:
 	rm -f *.out  processes.txt
@@ -18,4 +19,4 @@ all: clean build
 
 run:
 	./process_generator.out
-
+	#./buddy.out
