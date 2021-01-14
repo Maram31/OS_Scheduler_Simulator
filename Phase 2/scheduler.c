@@ -383,7 +383,9 @@ int RR(int quant)
                 temp_node ->processInfo.remainingTime = 0;
                 insertToQueue(&finished_queue, temp_node -> processInfo);
                 fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), temp_node ->processInfo.id, temp_node ->processInfo.arrivalTime, temp_node ->processInfo.runTime, temp_node ->processInfo.remainingTime, temp_node->processInfo.waitingTime, turnaround_time, weighted_ta); 
+                printf("Mem start %d\n", temp_node->processInfo.mem_start);
                 deallocate(temp_node->processInfo.mem_start, temp_node->processInfo.id);
+                print();
                 //printf("Goodbye process %d\n", temp_node -> processInfo.id);
                 final_size -= 1;
                 
@@ -452,12 +454,15 @@ int RR(int quant)
                     //printf("Forked pid insert: %d\n", pid);
                     previous_head->processInfo.systempid = pid;
                     fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d\n", getClk(), previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.runTime, previous_head->processInfo.waitingTime);
-                    insertToQueue(&running_queue, previous_head->processInfo);
+                    
                     int mem_start = allocate(previous_head->processInfo.memsize, previous_head->processInfo.id);
+                    printf("Alloc mem start: %d\n", mem_start);
                     if(mem_start != -1)
                     {
                         previous_head->processInfo.mem_start = mem_start;
                     }
+                    insertToQueue(&running_queue, previous_head->processInfo);
+                    print();
                     currentProcess = previous_head->processInfo;
                 }
             }
