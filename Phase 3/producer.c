@@ -81,6 +81,10 @@ void up(int semno) {
 void handler(int signum);
 int shmid;
 int shmid_num;
+int shmid_resources;
+int shmid_producers_count;
+void *shmaddr_resources;
+void *shmaddr_producers_count;
 int main (int argc, char *argv[])
 {
    
@@ -88,7 +92,29 @@ int main (int argc, char *argv[])
     signal(SIGTSTP, handler);
     signal(SIGKILL, handler);
 
-    key_t key_id = ftok("keyfile", 65);               
+    key_t key_id = ftok("keyfile", 80);               
+    shmid_resources = shmget(key_id, BUF_SIZE*sizeof(int), IPC_CREAT | 0644);
+
+    shmaddr_resources = shmat(shmid_resources, (void *)0, 0);
+    if (shmaddr_resources == (void*)-1)
+    {
+        perror("Error in attach in consumer");
+        exit(-1);
+    }
+
+    key_id = ftok("keyfile", 90);               
+    shmid_producers_count = shmget(key_id, BUF_SIZE*sizeof(int), IPC_CREAT | 0644);
+
+    shmaddr_producers_count = shmat(shmid_producers_count, (void *)0, 0);
+    if (shmaddr_producers_count == (void*)-1)
+    {
+        perror("Error in attach in consumer");
+        exit(-1);
+    }
+    (*(int*)shmaddr_producers_count) ++;
+
+
+    key_id = ftok("keyfile", 65);               
     shmid = shmget(key_id, BUF_SIZE*sizeof(int), IPC_CREAT | 0644);
     //printf("Producer: Shared memory id: %d\n", shmid);
 
@@ -97,10 +123,12 @@ int main (int argc, char *argv[])
     //printf("Producer: Shared memory num id: %d\n", shmid_num);
     
     semid = sem_create(3);
-	sem_initialise(MUTEX, 1);
-	sem_initialise(FULL, 0);
-	sem_initialise(EMPTY, BUF_SIZE);
-
+    if((*(int*)shmaddr_resources) == 0)
+    {
+        sem_initialise(MUTEX, 1);
+        sem_initialise(FULL, 0);
+        sem_initialise(EMPTY, BUF_SIZE);
+    }
     void *shmaddr = shmat(shmid, (void *)0, 0);
     if (shmaddr == (void*)-1)
     {
@@ -115,34 +143,34 @@ int main (int argc, char *argv[])
         exit(-1);
     }
 
+    (*(int*)shmaddr_resources) ++;
 
-    int i = 100;
+    int i = 100 * (*(int*)shmaddr_producers_count);
+    printf("Producer %d\n", i);
     while(1)
     {
-        
             if((*(int*)shmaddr_num) < BUF_SIZE)
-            {
+           {
                 down(EMPTY);
                 sleep(rand()%10+1);
                 down(MUTEX);
-
-                (*(int*)shmaddr_num) ++;
-
-                (*((int*)shmaddr+ add)) = i ++;
+                
+                if((*((int*)shmaddr+ add)) == -1 || (*((int*)shmaddr+ add)) == 0)
+                {
+                    (*(int*)shmaddr_num) ++;
+                    (*((int*)shmaddr+ add)) = i ++;
+                    printf("Producer: message sent with value %d\n", i-1);
+                }
                 add = (add+1) % BUF_SIZE;
-                printf("Producer: message sent with value %d\n", i-1);
-
-                /*int j;
+                int j;
                 for(j = 0; j<BUF_SIZE; j++)
                 {
                     printf("%d\t", (*((int*)shmaddr+ j)));
                 }
-                printf("\n");*/
-
-
+                printf("\n");
                 up(MUTEX);
                 up(FULL);
-            }
+           }
         
     }
 
@@ -151,8 +179,17 @@ int main (int argc, char *argv[])
 
 void handler(int signum)
 {
-    shmctl(shmid, IPC_RMID, (struct shmid_ds *)0);
-    shmctl(shmid_num, IPC_RMID, (struct shmid_ds *)0);
-    semctl(semid, 0, IPC_RMID);    
+    (*(int*)shmaddr_resources) --;
+    (*(int*)shmaddr_producers_count) --;
+
+    printf("Resources: %d\n", (*(int*)shmaddr_resources));
+    if((*(int*)shmaddr_resources) == 0)
+    {
+        shmctl(shmid, IPC_RMID, (struct shmid_ds *)0);
+        shmctl(shmid_num, IPC_RMID, (struct shmid_ds *)0);
+        shmctl(shmid_producers_count, IPC_RMID, (struct shmid_ds *)0);
+        shmctl(shmid_resources, IPC_RMID, (struct shmid_ds *)0);
+        semctl(semid, 0, IPC_RMID);    
+    }
     raise(SIGTERM);                       
 }
