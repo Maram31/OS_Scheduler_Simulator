@@ -10,6 +10,7 @@
 
 /* Size of shared buffer */
 #define BUF_SIZE 3
+int buffer[BUF_SIZE];
 
 int add=0;										/* place to add next element */
 int rem=0;										/* place to remove next element */
@@ -101,14 +102,26 @@ int main (int argc, char *argv[])
     }
     printf("Producer: initial value %d\n", (*(int*)shmaddr));
     printf("\nProducer: Shared memory attached at address %x\n", shmaddr);
+    int i = 100;
     while(1)
     {
+        //while (num == BUF_SIZE)	{}		/* block if buffer is full */
         down(consumer_sem);
 
-        sleep(rand()%20+1);
+        sleep(rand()%10+1);
         up(memory_sem);
-        (*(int*)shmaddr) ++;
-        printf("Producer: message sent with value %d\n", (*(int*)shmaddr));
+
+        (*((int*)shmaddr+ add)) = i++;
+
+        add = (add+1) % BUF_SIZE;
+        printf("Producer: message sent with value %d\n", i-1);
+        int j;
+        for(j = 0; j<BUF_SIZE; j++)
+        {
+            printf("%d\t", (*((int*)shmaddr+ j)));
+        }
+        printf("\n");
+        //num++;
         down(memory_sem);
 
         up(producer_sem);

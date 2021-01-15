@@ -10,6 +10,7 @@
 
 /* Size of shared buffer */
 #define BUF_SIZE 3
+int buffer[BUF_SIZE];
 
 int add=0;										/* place to add next element */
 int rem=0;										/* place to remove next element */
@@ -32,7 +33,7 @@ void down(int sem)
     p_op.sem_op = -1;
     p_op.sem_flg = !IPC_NOWAIT;
 
-    if (semop(sem, &p_op, 1) == -1)
+    if (semop(sem, &p_op, 1) < 0)
     {
         perror("Error in down()");
         exit(-1);
@@ -47,7 +48,7 @@ void up(int sem)
     v_op.sem_op = 1;
     v_op.sem_flg = !IPC_NOWAIT;
 
-    if (semop(sem, &v_op, 1) == -1)
+    if (semop(sem, &v_op, 1)< 0)
     {
         perror("Error in up()");
         exit(-1);
@@ -100,14 +101,28 @@ int main (int argc, char *argv[])
         exit(-1);
     }
     printf("\nConsumer: Shared memory attached at address %x\n", shmaddr);
+    int i;
     while(1)
     {
-        down(producer_sem);
+       
 
-        sleep(rand()%20+1);
+        down(producer_sem);
+        sleep(rand()%10+1);
+
         up(memory_sem);
-        (*(int*)shmaddr)--;
-        printf("Consumer: message recived with value %d\n", (*(int*)shmaddr));
+
+        i = (*((int*)shmaddr+ rem)) ;
+        rem = (rem+1) % BUF_SIZE;
+        printf("Consumer: message recived with value %d\n", i);
+
+        int j;
+        for(j = 0; j<BUF_SIZE; j++)
+        {
+            printf("%d\t", (*((int*)shmaddr+ j)));
+        }
+        printf("\n");
+        
+
         down(memory_sem);
 
         up(consumer_sem);
