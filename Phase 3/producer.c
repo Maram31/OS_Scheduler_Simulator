@@ -7,6 +7,7 @@
 #include <sys/sem.h>
 #include <sys/stat.h>
 #include <sys/msg.h>
+#include <signal.h>
 
 /* Size of shared buffer */
 #define BUF_SIZE 3
@@ -53,7 +54,7 @@ void sem_initialise(int semno, int val) {
 	}
 }
 
-void wait(int semno) {
+void down(int semno) {
 	struct sembuf buf;
 	buf.sem_num = semno;
 	buf.sem_op = -1;
@@ -64,7 +65,7 @@ void wait(int semno) {
 	}
 }
 
-void signal(int semno) {
+void up(int semno) {
 	struct sembuf buf;
 	buf.sem_num = semno;
 	buf.sem_op = 1;
@@ -76,45 +77,24 @@ void signal(int semno) {
 	}
 }
 
-void down(int sem)
-{
-    struct sembuf p_op;
 
-    p_op.sem_num = 0;
-    p_op.sem_op = -1;
-    p_op.sem_flg = !IPC_NOWAIT;
-
-    if (semop(sem, &p_op, 1) < 0)
-    {
-        perror("Error in down()");
-        exit(-1);
-    }
-}
-
-void up(int sem)
-{
-    struct sembuf v_op;
-
-    v_op.sem_num = 0;
-    v_op.sem_op = 1;
-    v_op.sem_flg = !IPC_NOWAIT;
-
-    if (semop(sem, &v_op, 1) < 0)
-    {
-        perror("Error in up()");
-        exit(-1);
-    }
-}
-
+void handler(int signum);
+int shmid;
+int shmid_num;
 int main (int argc, char *argv[])
 {
+   
+    signal(SIGINT, handler);
+    signal(SIGTSTP, handler);
+    signal(SIGKILL, handler);
+
     key_t key_id = ftok("keyfile", 65);               
-    int shmid = shmget(key_id, BUF_SIZE*sizeof(int), IPC_CREAT | 0644);
-    printf("Producer: Shared memory id: %d\n", shmid);
+    shmid = shmget(key_id, BUF_SIZE*sizeof(int), IPC_CREAT | 0644);
+    //printf("Producer: Shared memory id: %d\n", shmid);
 
     key_id = ftok("keyfile", 60);               
-    int shmid_num = shmget(key_id, sizeof(int), IPC_CREAT | 0644);
-    printf("Producer: Shared memory num id: %d\n", shmid_num);
+    shmid_num = shmget(key_id, sizeof(int), IPC_CREAT | 0644);
+    //printf("Producer: Shared memory num id: %d\n", shmid_num);
     
     semid = sem_create(3);
 	sem_initialise(MUTEX, 1);
@@ -122,20 +102,19 @@ int main (int argc, char *argv[])
 	sem_initialise(EMPTY, BUF_SIZE);
 
     void *shmaddr = shmat(shmid, (void *)0, 0);
-    if (shmaddr == -1)
+    if (shmaddr == (void*)-1)
     {
         perror("Error in attach in producer");
         exit(-1);
     }
 
     void *shmaddr_num = shmat(shmid_num, (void *)0, 0);
-    if (shmaddr_num == -1)
+    if (shmaddr_num == (void*)-1)
     {
         perror("Error in attach in consumer");
         exit(-1);
     }
 
-    printf("\nProducer: Shared memory attached at address %x\n", shmaddr);
 
     int i = 100;
     while(1)
@@ -143,31 +122,37 @@ int main (int argc, char *argv[])
         
             if((*(int*)shmaddr_num) < BUF_SIZE)
             {
-               wait(EMPTY);
-                //sleep(rand()%10+1);
-                wait(MUTEX);
+                down(EMPTY);
+                sleep(rand()%10+1);
+                down(MUTEX);
 
-                printf("Producer: num of processes %d\n",(*(int*)shmaddr_num));
                 (*(int*)shmaddr_num) ++;
 
                 (*((int*)shmaddr+ add)) = i ++;
                 add = (add+1) % BUF_SIZE;
                 printf("Producer: message sent with value %d\n", i-1);
 
-                int j;
+                /*int j;
                 for(j = 0; j<BUF_SIZE; j++)
                 {
                     printf("%d\t", (*((int*)shmaddr+ j)));
                 }
-                printf("\n");
+                printf("\n");*/
 
-                printf("Producer: num of processes %d\n",(*(int*)shmaddr_num));
 
-                signal(MUTEX);
-                signal(FULL);
+                up(MUTEX);
+                up(FULL);
             }
         
     }
 
 	return 0;
+}
+
+void handler(int signum)
+{
+    shmctl(shmid, IPC_RMID, (struct shmid_ds *)0);
+    shmctl(shmid_num, IPC_RMID, (struct shmid_ds *)0);
+    semctl(semid, 0, IPC_RMID);    
+    raise(SIGTERM);                       
 }
