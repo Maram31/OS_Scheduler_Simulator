@@ -16,14 +16,65 @@ int add=0;										/* place to add next element */
 int rem=0;										/* place to remove next element */
 int num=0;										/* number elements in buffer */
 
-union Semun
-{
-    int val;               /* value for SETVAL */
-    struct semid_ds *buf;  /* buffer for IPC_STAT & IPC_SET */
-    ushort *array;         /* array for GETALL & SETALL */
-    struct seminfo *__buf; /* buffer for IPC_INFO */
-    void *__pad;
+#define MUTEX 0
+#define FULL 1
+#define EMPTY 2
+
+int semid;
+
+union semun {
+	int val; /*	Value	for	SETVAL	*/
+	struct semid_ds *buf;		/*	Buffer	for	IPC_STAT,	IPC_SET	*/
+	unsigned short *array;	/*	Array	for	GETALL,	SETALL	*/
+	struct seminfo *__buf;	/*	Buffer	for	IPC_INFO (Linux-specific)	*/
 };
+
+int sem_create(int nsems) { 
+	int  id;
+	key_t key = 1234;
+	int semflg = IPC_CREAT | 0666;
+	id = semget(key, nsems, semflg);
+	if(id < 0)
+	{
+		perror("semget:");
+		exit (1);
+	}
+	return id;
+}
+
+void sem_initialise(int semno, int val) {
+	union semun un;
+	un.val = val;
+	if(semctl(semid, semno, SETVAL, un) < 0)
+	{
+	//	printf("%d\n", semno);
+		perror("semctl:");
+		exit(2);
+	}
+}
+
+void wait(int semno) {
+	struct sembuf buf;
+	buf.sem_num = semno;
+	buf.sem_op = -1;
+	buf.sem_flg = 0;
+	if(semop(semid, &buf, 1) < 0) {
+		perror("semop:");
+		exit(2);
+	}
+}
+
+void signal(int semno) {
+	struct sembuf buf;
+	buf.sem_num = semno;
+	buf.sem_op = 1;
+	buf.sem_flg = 0;
+	if(semop(semid, &buf, 1) < 0)
+	{
+		perror("semop:");
+		exit(2);
+	}
+}
 
 void down(int sem)
 {
@@ -61,38 +112,14 @@ int main (int argc, char *argv[])
     int shmid = shmget(key_id, BUF_SIZE*sizeof(int), IPC_CREAT | 0644);
     printf("Producer: Shared memory id: %d\n", shmid);
 
-    union Semun semun;
-
-    int producer_sem = semget(key_id, 1, 0666 | IPC_CREAT);
-    key_id = ftok("keyfile", 60);
-    int consumer_sem = semget(key_id, 1, 0666 | IPC_CREAT);
-    key_id = ftok("keyfile", 70);
-    int memory_sem = semget(key_id, 1, 0666 | IPC_CREAT);
-
-    if (producer_sem == -1 || consumer_sem == -1 || memory_sem == -1)
-    {
-        perror("Producer: Error in create sem");
-        exit(-1);
-    }
-
-    semun.val = 0; /* initial value of the semaphore, Binary semaphore */
-    if (semctl(producer_sem, 0, SETVAL, semun) == -1)
-    {
-        perror("Producer: Error in semctl");
-        exit(-1);
-    }
-    semun.val = BUF_SIZE;
-    if (semctl(consumer_sem, 0, SETVAL, semun) == -1)
-    {
-        perror("Producer: Error in semctl");
-        exit(-1);
-    }
-    semun.val = 0;
-    if (semctl(memory_sem, 0, SETVAL, semun) == -1)
-    {
-        perror("Producer: Error in semctl");
-        exit(-1);
-    }
+    key_id = ftok("keyfile", 60);               
+    int shmid_num = shmget(key_id, sizeof(int), IPC_CREAT | 0644);
+    printf("Producer: Shared memory num id: %d\n", shmid_num);
+    
+    semid = sem_create(3);
+	sem_initialise(MUTEX, 1);
+	sem_initialise(FULL, 0);
+	sem_initialise(EMPTY, BUF_SIZE);
 
     void *shmaddr = shmat(shmid, (void *)0, 0);
     if (shmaddr == -1)
@@ -100,31 +127,46 @@ int main (int argc, char *argv[])
         perror("Error in attach in producer");
         exit(-1);
     }
-    printf("Producer: initial value %d\n", (*(int*)shmaddr));
+
+    void *shmaddr_num = shmat(shmid_num, (void *)0, 0);
+    if (shmaddr_num == -1)
+    {
+        perror("Error in attach in consumer");
+        exit(-1);
+    }
+
     printf("\nProducer: Shared memory attached at address %x\n", shmaddr);
+
     int i = 100;
     while(1)
     {
-        //while (num == BUF_SIZE)	{}		/* block if buffer is full */
-        down(consumer_sem);
+        
+            if((*(int*)shmaddr_num) < BUF_SIZE)
+            {
+               wait(EMPTY);
+                //sleep(rand()%10+1);
+                wait(MUTEX);
 
-        sleep(rand()%10+1);
-        up(memory_sem);
+                printf("Producer: num of processes %d\n",(*(int*)shmaddr_num));
+                (*(int*)shmaddr_num) ++;
 
-        (*((int*)shmaddr+ add)) = i++;
+                (*((int*)shmaddr+ add)) = i ++;
+                add = (add+1) % BUF_SIZE;
+                printf("Producer: message sent with value %d\n", i-1);
 
-        add = (add+1) % BUF_SIZE;
-        printf("Producer: message sent with value %d\n", i-1);
-        int j;
-        for(j = 0; j<BUF_SIZE; j++)
-        {
-            printf("%d\t", (*((int*)shmaddr+ j)));
-        }
-        printf("\n");
-        //num++;
-        down(memory_sem);
+                int j;
+                for(j = 0; j<BUF_SIZE; j++)
+                {
+                    printf("%d\t", (*((int*)shmaddr+ j)));
+                }
+                printf("\n");
 
-        up(producer_sem);
+                printf("Producer: num of processes %d\n",(*(int*)shmaddr_num));
+
+                signal(MUTEX);
+                signal(FULL);
+            }
+        
     }
 
 	return 0;
