@@ -399,13 +399,18 @@ int RR(int quant)
         //Move process from ready state to running state
         if(current_head != NULL && running_queue.head == NULL)//&& running_queue.size == 0)// && (start_time_prev_process == -1 || getClk() - start_time_prev_process >= time_quantum))
         {
-            start_time_prev_process = getClk();
+            start_time_prev_process = getClk(); //will be removed
+
+            
             removeFromQueue(&ready_queue, current_head-> processInfo.id );
+
+            
+
             //printf("Is starteddddd? %d\n", current_head->processInfo.isStarted);
             flag_first_time = current_head->processInfo.isStarted;
             
             
-            current_head -> processInfo.starttime = getClk();
+            current_head -> processInfo.starttime = getClk();   //will be removed
             if(current_head ->processInfo.remainingTime - time_quantum < 0)
             {
                 current_head -> processInfo.previousstart = getClk() + current_head ->processInfo.remainingTime - time_quantum;
@@ -422,48 +427,71 @@ int RR(int quant)
             //printf("Is started? %d\n", previous_head->processInfo.isStarted);
             if(flag_first_time == 0)
             {
-                pid=fork();
-                
-                if(pid == 0){
-                    //printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
-                    
-                    //Prepare parameters to be sent to process
-                    char id_param [MAXCHAR] ; 
-                    sprintf(id_param, "%d", previous_head -> processInfo.id);
-                    char running_time_param [MAXCHAR];
-                    sprintf(running_time_param, "%d", previous_head -> processInfo.runTime);
-                    char arrival_time_param [MAXCHAR];
-                    sprintf(arrival_time_param, "%d", previous_head -> processInfo.arrivalTime);
-                    //
-                    char start_time_param [MAXCHAR];
-                    sprintf(start_time_param, "%d", getClk());
-                   
-                    return execl("./process.out", "./process.out", id_param, arrival_time_param, running_time_param, start_time_param,(char*)NULL);
-                }
-                else if(pid == -1)
+
+                //############################ under construction
+                int mem_start = allocate(previous_head->processInfo.memsize, previous_head->processInfo.id);
+                printf("Alloc mem start: %d\n", mem_start);
+                if(mem_start == -1) /////// Check again
                 {
-                    printf("\nClock Initialization Error\n");
-                    exit(-1); 
+                    previous_head->processInfo.mem_start = mem_start;
+                    previous_head->processInfo.previousstart = -1;
+                    previous_head->processInfo.isStarted = 0;
+                    insertToQueue(&ready_queue, previous_head->processInfo);
+
                 }
                 else
                 {
-                    
-                    //current_head ->processInfo.isRunning = true;
-                    previous_head -> processInfo.starttime = getClk();
-                    previous_head ->processInfo.waitingTime = getClk() - previous_head->processInfo.arrivalTime;
-                    //printf("Forked pid insert: %d\n", pid);
-                    previous_head->processInfo.systempid = pid;
-                    fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d\n", getClk(), previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.runTime, previous_head->processInfo.waitingTime);
-                    
-                    int mem_start = allocate(previous_head->processInfo.memsize, previous_head->processInfo.id);
-                    printf("Alloc mem start: %d\n", mem_start);
-                    if(mem_start != -1)
-                    {
-                        previous_head->processInfo.mem_start = mem_start;
-                    }
-                    insertToQueue(&running_queue, previous_head->processInfo);
+                    previous_head->processInfo.mem_start = mem_start;
+                
                     print();
-                    currentProcess = previous_head->processInfo;
+                    //############################
+
+                    pid=fork();
+                    
+                    if(pid == 0){
+                        //printf("current time is %d\tprocess with id %d is now forked\n", x, previous_head->processInfo.id);
+                        
+                        //Prepare parameters to be sent to process
+                        char id_param [MAXCHAR] ; 
+                        sprintf(id_param, "%d", previous_head -> processInfo.id);
+                        char running_time_param [MAXCHAR];
+                        sprintf(running_time_param, "%d", previous_head -> processInfo.runTime);
+                        char arrival_time_param [MAXCHAR];
+                        sprintf(arrival_time_param, "%d", previous_head -> processInfo.arrivalTime);
+                        //
+                        char start_time_param [MAXCHAR];
+                        sprintf(start_time_param, "%d", getClk());
+                    
+                        return execl("./process.out", "./process.out", id_param, arrival_time_param, running_time_param, start_time_param,(char*)NULL);
+                    }
+                    else if(pid == -1)
+                    {
+                        deallocate(previous_head->processInfo.mem_start, previous_head->processInfo.id);
+                        printf("\nProcess Forking Error\n");
+                        exit(-1); 
+                    }
+                    else
+                    {
+                        
+                        //current_head ->processInfo.isRunning = true;
+                        previous_head -> processInfo.starttime = getClk();
+                        previous_head ->processInfo.waitingTime = getClk() - previous_head->processInfo.arrivalTime;
+                        //printf("Forked pid insert: %d\n", pid);
+                        previous_head->processInfo.systempid = pid;
+                        fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d\n", getClk(), previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.runTime, previous_head->processInfo.waitingTime);
+                        /*
+                        int mem_start = allocate(previous_head->processInfo.memsize, previous_head->processInfo.id);
+                        printf("Alloc mem start: %d\n", mem_start);
+                        if(1) /////// Check again
+                        {
+                            previous_head->processInfo.mem_start = mem_start;
+                        }
+                        
+                        print();
+                        */
+                        insertToQueue(&running_queue, previous_head->processInfo);
+                        currentProcess = previous_head->processInfo;
+                    }
                 }
             }
             else

@@ -21,7 +21,6 @@ struct map mp = {NULL};
 typedef short bool;
 #define true 1
 #define false 0
-
 void Buddy(int s)
 {
 
@@ -30,18 +29,15 @@ void Buddy(int s)
 
 	size = n + 1;
 
-	/*for(int i = 0; i <= n; i++)
-		arr[i].clear();
-	*/
+	
 	initialize_vov(&arr, n);
-	// Initially whole block of specified
-	// size is available
-	//arr[n].push_back(make_pair(0, s - 1));
+	
 	struct vector* iterator = arr.tail_vov;
 	push_back(iterator, 0, s-1);
-	
+	printf("Memory with size %d bytes has been initialized!\n", s);
 	
 }
+
 
 int allocate(int s)
 {
@@ -49,8 +45,8 @@ int allocate(int s)
 	// Calculate index in free list
 	// to search for block if available
 	int x = ceil(log(s) / log(2));
+    int return_value;
 	
-	//printf("X = %d\n", x);
 
 	struct vector* iterator = arr.head_vov;
 	int counter = 0;
@@ -65,46 +61,25 @@ int allocate(int s)
 	}
 	if(counter < x)
 	{
-		/*
-		iterator->head = NULL;
-		iterator->next = NULL;
-		iterator->previous = NULL;
-		iterator->size = 0;
-		iterator ->tail = NULL;*/
+		
 		iterator = NULL;
 		printf("Sorry, failed to allocate memory\n");
-		return - 1;
+		return_value = -1;
+        //return - 1;
 	}
-	//printf("Counter = %d\n",counter);
 	
 	// Block available
-	//if (arr[x].size() > 0)
 	if(iterator->head != NULL)
 	{
-	    /*
-	    if(s == 30)
-            cout << "Hey\n";
-		*/
-		//pair<int, int> temp = arr[x][0];
-		//pair<int, int> temp = arr[x].back();
-        //arr[x].pop_back();
+	    
         int temp_first = back_first(iterator);
 		int temp_second = back_second(iterator);
 		pop_back(iterator);
-		/*
-        if(s == 30)
-            cout << temp.first << "\t" << temp.second << endl;
-        */
-		// Remove block from free list
-		//arr[x].erase(arr[x].begin());
-
-		//cout << "Memory from " << temp.first<< " to " << temp.second<< " allocated" << "\n";
-		//printf("Memory from %d to %d allocated\n", temp.first, temp.second);
+		
 		printf("Memory from %d to %d allocated\n", temp_first, temp_second);
-
-		// Map starting address with
-		// size to make deallocating easy
-		//mp[temp.first] = temp.second -temp.first + 1;
+        
+        return_value = temp_first;
+		
 		insert_to_map(&mp, temp_first, temp_second -temp_first + 1); //my defined map
 	}
 	else
@@ -116,11 +91,7 @@ int allocate(int s)
 		iterator = iterator->next;
 		for(i = x + 1; i < size; i++)
 		{
-			//printf("Inside:\n");
-			//print_vector(iterator);
-			// Find block size greater
-			// than request
-			//if (arr[i].size() != 0)
+			
 			
 			if(iterator->head != NULL)
 				break;
@@ -132,72 +103,62 @@ int allocate(int s)
 		// i.e., no memory block available
 		if (i >= size)
 		{
-			//cout << "Sorry, failed to allocate memory\n";
 			printf("Sorry, failed to allocate memory\n");
-			return -1;
+            return_value = -1;
+			//return -1;
 		}
 
-		// If found
+		
 		else
 		{
-			//pair<int, int> temp;
-			//temp = arr[i].back();
-            //arr[i].pop_back();
 
 			int temp_first = back_first(iterator);
 			int temp_second = back_second(iterator);
 			pop_back(iterator);
-			// Remove first block to split
-			// it into halves
-			//arr[i].erase(arr[i].begin());
+			
+			
 			i--;
 
 			for(;i >= x; i--)
 			{
 
 				// Divide block into two halves
-				//pair<int, int> pair1, pair2;
-				//pair1 = make_pair(temp.first,temp.first +(temp.second -temp.first) / 2);
+				
 				int pair1_first = 	temp_first;
 				int pair1_second = temp_first +(temp_second -temp_first) / 2;			
-				//pair2 = make_pair(temp.first +(temp.second -temp.first + 1) / 2,temp.second);
 				int pair2_first = 	temp_first +(temp_second -temp_first + 1) / 2;
 				int pair2_second = temp_second;
 
 				iterator = iterator->previous;
 
-				//arr[i].push_back(pair1);
+				
 				push_back(iterator, pair1_first, pair1_second);
-				// Push them in free list
-				//arr[i].push_back(pair2);
+				
 				push_back(iterator, pair2_first, pair2_second);
 				
-				//temp = arr[i][0];
+				
 				temp_first = begin_first(iterator);
 				temp_second = begin_second(iterator);
-				// Remove first free block to
-				// further split
-				//arr[i].erase(arr[i].begin());
+				
 				erase_begin(iterator);
 			}
 
-			//cout << "Memory from " << temp.first << " to " << temp.second<< " allocate" << "\n";
-			//printf("Memory from %d to %d allocated\n", temp.first, temp.second);
+			
 			printf("Memory from %d to %d allocated\n", temp_first, temp_second);
+            
+			return_value = temp_first;
 
-			//mp[temp.first] = temp.second -temp.first + 1;
-			//insert_to_map(&mp, temp.first, temp.second -temp.first + 1); //my defined map
 			insert_to_map(&mp, temp_first, temp_second -temp_first + 1); //my defined map
 		}
 	}
-	return 0;
+	return return_value;
 }
+
 
 void deallocate(int id)
 {
 
 	// If no such starting address available
-	//if(mp.find(id) == mp.end())
 	int check_exist = get_value_map(&mp, id);
 	if(check_exist == -1)
 	{
@@ -207,7 +168,6 @@ void deallocate(int id)
 	}
 
 	// Size of block to be searched
-	//int n = ceil(log(mp[id]) / log(2));
 	int temp_log = get_value_map(&mp, id);
 	int n = ceil(log(temp_log) / log(2));
 
@@ -226,25 +186,20 @@ void deallocate(int id)
 		iterator = iterator->next;
 	}
 	// Add the block in free list
-	//arr[n].push_back(make_pair(id,id + pow(2, n) - 1));
 
 	push_back(iterator, id, id + pow(2, n) - 1);						
-	//cout << "Memory block from " << id << " to "<< id + pow(2, n) - 1<< " freed\n";
 	printf("Memory block from %d to %.0f freed\n", id, id + pow(2, n) - 1);
 
-	// Calculate buddy number
+    // Calculate buddy number
 	temp_log = get_value_map(&mp, id);
 
-	//buddyNumber = id / mp[id];
 	buddyNumber = id / temp_log;
 
-	//int temp_size = mp[id];
     int temp_size = temp_log;
 
 	bool flag = true;
 	while(n <= size && flag) // may be modified to less than only
     {
-        //printf("loop\n");
         flag = false;
 
 
@@ -253,63 +208,43 @@ void deallocate(int id)
         else
             buddyAddress = id + pow(2, n);
 
-        //cout << buddyAddress << "\t" << buddyNumber<< endl;
-		printf("%d\t%d\n", buddyAddress, buddyNumber);
+		//printf("%d\t%d\n", buddyAddress, buddyNumber);
 
         // Search in free list to find it's buddy
 		int  my_size = iterator->size;
-        //for(i = 0; i < arr[n].size(); i++)
 		struct vector_element * v_element = iterator->head;
 		for(i = 0; i < my_size; i++)
         {
-			//printf("Hellozzz\n");
-            // If buddy found and is also free
-            //if (arr[n][i].first == buddyAddress)
+			
 			if (v_element->first == buddyAddress)
             {
                 flag = true;
-                //cout << buddyAddress << "\t" << buddyNumber<< "\t"<<i << endl;
-                // Now merge the buddies to make
-                // them one large free memory block
+                
                 if (buddyNumber % 2 == 0)
                 {
-                    //cout << "Here\n";
-                    //arr[n + 1].push_back(make_pair(id,id + 2 * (pow(2, n)) -1));
+                    
 					iterator = iterator->next;
 					push_back(iterator, id, id + 2 * (pow(2, n)) -1);
 
-                    //cout << "Coalescing of blocks starting at "<< id << " and " << buddyAddress<< " was done" << "\n";
-					printf("Coalescing of blocks starting at %d and %d was done\n", id, buddyAddress);
+					//printf("Coalescing of blocks starting at %d and %d was done\n", id, buddyAddress);
                 }
                 else
                 {
-                    //arr[n + 1].push_back(make_pair(buddyAddress, buddyAddress +2 * (pow(2, n)) - 1));
 					iterator = iterator->next;
 					push_back(iterator, buddyAddress, buddyAddress +2 * (pow(2, n)) - 1);
 
-                    //cout << "Coalescing of blocks starting at "<< buddyAddress << " and "<< id << " was done" << "\n";
-					printf("Coalescing of blocks starting at %d and %d was done\n", buddyAddress, id);
+					//printf("Coalescing of blocks starting at %d and %d was done\n", buddyAddress, id);
                 }
 				iterator = iterator->previous;
-				//printf("Debuggg###\n");
-                //print_vector(iterator);
-				//printf("Debuggg###\n");
-				//arr[n].erase(arr[n].begin() + i);
+				
                 erase_at_index(iterator, i);
-				//arr[n].erase(arr[n].begin() +arr[n].size() - 1);
                 erase_at_index(iterator,  iterator->size-1);
-				//printf("mm\t%d\n", iterator->size);
-				//printf("Debo\n");
-				//print_vector(iterator);
-				//printf("Debo\n");
-				//print_vector(iterator);
+				
 				break;
             }
 			v_element = v_element->next;
         }
-        //cout<<"Boom\n";
-
-
+       
         if (buddyNumber % 2 == 0)
         {
             id = id;
@@ -335,17 +270,7 @@ void deallocate(int id)
 
 void print()
 {
-	/*
-    for(int i = 0; i < size ; i ++)
-    {
-        for(int j = 0; j < (int)arr[i].size(); j ++)
-        {
-            //cout << arr[i][j].first << "\t" <<arr[i][j].second << "\t" << i << "\t" << j <<endl;
-			printf("%d\t%d\t%d\t%d\n", arr[i][j].first, arr[i][j].second, i, j);
-
-        }
-
-    }*/
+	
 	struct vector* iterator = arr.head_vov;
 	int counter = 0;
 	while (iterator != NULL)
@@ -367,14 +292,14 @@ int main()
     
 	Buddy(128);
 	
-	print();
+	//print();
 	/*
 	allocate(200);
 	printf("dehk\n");
 	*/
 	
 	result = allocate(20);
-	print();
+	/*print();
 	if(result == -1)
 	{
 		printf("Bad\n");
@@ -383,9 +308,9 @@ int main()
 	{
 		printf("GOOOD\n");
 	}
-	
+	*/
 	result = allocate(15);
-	print();
+	/*print();
 	if(result == -1)
 	{
 		printf("Bad\n");
@@ -394,9 +319,9 @@ int main()
 	{
 		printf("GOOOD\n");
 	}
-	
+	*/
 	result = allocate(10);
-	print();
+	/*print();
 	if(result == -1)
 	{
 		printf("Bad\n");
@@ -405,9 +330,9 @@ int main()
 	{
 		printf("GOOOD\n");
 	}
-	
+	*/
 	result = allocate(25);
-	print();
+	/*print();
 	if(result == -1)
 	{
 		printf("Bad\n");
@@ -416,23 +341,23 @@ int main()
 	{
 		printf("GOOOD\n");
 	}
-	
+	*/
 	result = allocate(80);
-	if(result == -1)
+	/*if(result == -1)
 	{
 		printf("Bad\n");
 	}
 	else
 	{
 		printf("GOOOD\n");
-	}
+	}*/
 	
 	deallocate(0);
-	print();
+	//print();
 	deallocate(48);
-	print();
+	//print();
 	result = allocate(8);
-	print();
+	/*print();
 	if(result == -1)
 	{
 		printf("Bad\n");
@@ -441,9 +366,9 @@ int main()
 	{
 		printf("GOOOD\n");
 	}
-	
+	*/
 	result = allocate(30);
-	print();
+	/*print();
 	if(result == -1)
 	{
 		printf("Bad\n");
@@ -452,11 +377,11 @@ int main()
 	{
 		printf("GOOOD\n");
 	}
-	
+	*/
 	deallocate(32);
-	print();
+	//print();
 	result = allocate(15);
-	print();
+	/*print();
 	if(result == -1)
 	{
 		printf("Bad\n");
@@ -465,15 +390,15 @@ int main()
 	{
 		printf("GOOOD\n");
 	}
-	
+	*/
 	deallocate(48);
-    print();
+    //print();
     deallocate(0);
-    print();
+    //print();
     deallocate(32);
-    print();
+    //print();
 	deallocate(64);
-	print();
+	//print();
     //allocate(200);
 	//print();
 	
