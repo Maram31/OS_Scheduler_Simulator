@@ -50,6 +50,7 @@ int RR(int quant);
 
 struct LinkedList ready_queue = {NULL, NULL, 0};
 
+struct LinkedList waiting_list = {NULL, NULL, 0};
 // state 0 for started log
 // state 1 for stopped log
 // state 2 for finished log
@@ -229,11 +230,55 @@ void HPF()
 }
 void runProcessHPF(int clk)
 {
+    //##################
+    /*
+    if(busy == 0)
+    {
+        
+        struct Node * iterator = ready_queue.head;
+        while (iterator != NULL)
+        {
+            int mem_start = allocate(iterator->processInfo.memsize, iterator->processInfo.id);
+            printf("Alloc mem start: %d\n", mem_start);
+            if(mem_start == -1) /////// Check again
+            {
+                insertWithPriority(&waiting_list, iterator->processInfo);
+                removeWithPriority(&ready_queue);
+                printf("OH NO!\n");
+                //return;
+
+            }
+            else
+            {
+                printf("Good!\n");
+                iterator->processInfo.mem_start = mem_start;
+                break;
+            }
+            iterator = iterator->next;
+        }
+        
+    }*/
+    //##################
     if (isEmpty(&ready_queue) != 1 && busy == 0)
     {
+        currentProcess = ready_queue.head->processInfo;
+        
+        int mem_start = allocate(currentProcess.memsize, currentProcess.id);
+        //printf("Alloc mem start: %d\n", mem_start);
+        if(mem_start == -1) /////// Check again
+        {
+            return;
+            //printf("OH NO!\n");
+        }
+        else
+        {
+            currentProcess.mem_start = mem_start;
+            //printf("Good!\n");
+        }
+
         busy = 1;
         handler_finished = 0;
-        currentProcess = ready_queue.head->processInfo;
+        //currentProcess = ready_queue.head->processInfo;
         total_runtime += currentProcess.runTime;
         currentProcess.waitingTime = clk - currentProcess.arrivalTime;
         total_waiting += currentProcess.waitingTime;
@@ -269,6 +314,16 @@ void runProcessHPF(int clk)
 
       
     }
+    //########
+    /*
+    struct Node * new_iterator = waiting_list.head;
+    while (new_iterator != NULL)
+    {
+        insertWithPriority(&ready_queue, new_iterator->processInfo);
+        removeWithPriority(&waiting_list);
+    }
+    */
+    //#######
 }
 
 
@@ -281,9 +336,11 @@ void handler(int signum)
 
         
     //fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround_time, weighted_ta); 
-    fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, 0);
+    
     if (algorithmNumber == 1)
     {
+        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, 0);
+        deallocate(currentProcess.mem_start, currentProcess.id);
         int turnaround = clk - currentProcess.arrivalTime;
         float weighted_turnaround = (float)turnaround/(float)currentProcess.runTime;
 
@@ -300,14 +357,14 @@ void handler(int signum)
 
 int RR(int quant)
 { 
-    signal(SIGUSR1, finish_handler);
+    //signal(SIGUSR1, finish_handler);
     //Process ID for forking
     pid_t pid;
 
     
     //temp value
     time_quantum = quant;
-    printf("time quantum: %d\n", time_quantum);
+    //printf("time quantum: %d\n", time_quantum);
     //
     
     //Will be removed
@@ -360,7 +417,7 @@ int RR(int quant)
                 temp_node ->processInfo.remainingTime = 0;
                 insertToQueue(&finished_queue, temp_node -> processInfo);
                 fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), temp_node ->processInfo.id, temp_node ->processInfo.arrivalTime, temp_node ->processInfo.runTime, temp_node ->processInfo.remainingTime, temp_node->processInfo.waitingTime, turnaround_time, weighted_ta); 
-                printf("Mem start %d\n", temp_node->processInfo.mem_start);
+                //printf("Mem start %d\n", temp_node->processInfo.mem_start);
                 deallocate(temp_node->processInfo.mem_start, temp_node->processInfo.id);
                 //print();
                 //printf("Goodbye process %d\n", temp_node -> processInfo.id);
@@ -402,7 +459,7 @@ int RR(int quant)
 
                 //############################ under construction
                 int mem_start = allocate(previous_head->processInfo.memsize, previous_head->processInfo.id);
-                printf("Alloc mem start: %d\n", mem_start);
+                //printf("Alloc mem start: %d\n", mem_start);
                 if(mem_start == -1) /////// Check again
                 {
                     previous_head->processInfo.mem_start = mem_start;
@@ -518,7 +575,7 @@ int RR(int quant)
 void finish_handler(int signum)
 {
     
-    printf("A Process finished execution at %d\n", getClk());
+    //printf("A Process finished execution at %d\n", getClk());
     signal(SIGUSR1, finish_handler);    
 
 }
@@ -650,7 +707,7 @@ int allocate(int s, int process_id)
 		int temp_second = back_second(iterator);
 		pop_back(iterator);
 		
-		printf("Memory from %d to %d allocated\n", temp_first, temp_second);
+		//printf("Memory from %d to %d allocated\n", temp_first, temp_second);
         fprintf(memoryLogFile, "At time %d allocated %d bytes for process %d from %d to %d\n", getClk(), temp_second-temp_first + 1, process_id, temp_first, temp_second);
 
         return_value = temp_first;
@@ -719,7 +776,7 @@ int allocate(int s, int process_id)
 			}
 
 			
-			printf("Memory from %d to %d allocated\n", temp_first, temp_second);
+			//printf("Memory from %d to %d allocated\n", temp_first, temp_second);
             fprintf(memoryLogFile, "At time %d allocated %d bytes for process %d from %d to %d\n", getClk(), temp_second-temp_first + 1, process_id, temp_first, temp_second);
 			return_value = temp_first;
 
@@ -763,7 +820,7 @@ void deallocate(int id, int process_id)
 	// Add the block in free list
 
 	push_back(iterator, id, id + pow(2, n) - 1);						
-	printf("Memory block from %d to %.0f freed\n", id, id + pow(2, n) - 1);
+	//printf("Memory block from %d to %.0f freed\n", id, id + pow(2, n) - 1);
 
     fprintf(memoryLogFile, "At time %d freed %.0f bytes for process %d from %d to %.0f\n", getClk(), pow(2, n), process_id, id, id + pow(2, n) - 1);
 	// Calculate buddy number
@@ -784,7 +841,7 @@ void deallocate(int id, int process_id)
         else
             buddyAddress = id + pow(2, n);
 
-		printf("%d\t%d\n", buddyAddress, buddyNumber);
+		//printf("%d\t%d\n", buddyAddress, buddyNumber);
 
         // Search in free list to find it's buddy
 		int  my_size = iterator->size;
@@ -802,14 +859,14 @@ void deallocate(int id, int process_id)
 					iterator = iterator->next;
 					push_back(iterator, id, id + 2 * (pow(2, n)) -1);
 
-					printf("Coalescing of blocks starting at %d and %d was done\n", id, buddyAddress);
+					//printf("Coalescing of blocks starting at %d and %d was done\n", id, buddyAddress);
                 }
                 else
                 {
 					iterator = iterator->next;
 					push_back(iterator, buddyAddress, buddyAddress +2 * (pow(2, n)) - 1);
 
-					printf("Coalescing of blocks starting at %d and %d was done\n", buddyAddress, id);
+					//printf("Coalescing of blocks starting at %d and %d was done\n", buddyAddress, id);
                 }
 				iterator = iterator->previous;
 				

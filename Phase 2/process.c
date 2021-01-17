@@ -28,7 +28,7 @@ int main(int agrc, char * argv[])
     {
     }
   
-    printf("Process %d finished execution\tcurrent time is %d\nTerminating and sending signal to parent...\n", pid, getClk());
+    //printf("Process %d finished execution\tcurrent time is %d\nTerminating and sending signal to parent...\n", pid, getClk());
 
     destroyClk(false);
     kill(getppid(), SIGUSR1);
