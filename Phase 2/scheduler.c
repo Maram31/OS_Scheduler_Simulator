@@ -243,12 +243,15 @@ void runProcessHPF(int clk)
         sprintf(running_time_param, "%d", currentProcess.runTime);
         char start_time_param[MAXCHAR];
         sprintf(start_time_param, "%d", clk);
+        char id_param [MAXCHAR] ; 
+        sprintf(id_param, "%d", currentProcess.id);
+                        
         
         pid_t pid = fork();
         if (pid == 0)
         {
             currentProcess.systempid = getpid();
-            execl("./process_mh.out", "./process_mh.out", running_time_param, start_time_param, (char *)NULL);
+            execl("./process.out", "./process.out", running_time_param, start_time_param, id_param,(char *)NULL);
         }
         else if (pid == -1)
         {
@@ -298,10 +301,6 @@ void handler(int signum)
 int RR(int quant)
 { 
     signal(SIGUSR1, finish_handler);
-    //signal(SIGCHLD, child_handler);
-    //
-    
-
     //Process ID for forking
     pid_t pid;
 
@@ -321,32 +320,13 @@ int RR(int quant)
     int x = getClk();
     
     
-    //printf("List size: %d\n", processes.size);
     //Debug
     printf("RR current time is %d\n", x);
     //
 
-    //Debug
-    /*
-    int ahmad = processes.size;
-    struct Node* tempppoz = processes.head;
-    while (ahmad > 0)
-    {
-        printf("Process ID %d\tArrival time %d\tRunning time %d\tStart time %d\tRemaining time %d\tWaiting time %d\tIs started %d\n",tempppoz->processInfo.id, tempppoz->processInfo.arrivalTime, tempppoz->processInfo.runTime, tempppoz ->processInfo.starttime, tempppoz->processInfo.remainingTime, tempppoz->processInfo.waitingTime, tempppoz ->processInfo.isStarted);
-        tempppoz = tempppoz -> next;
-        ahmad -= 1;
-    }*/
-    //
-
-
     //Variable to loop every 1 second
     int prev_time = x;
     //
-    
-    //Pointer to first process in linked list (Will be removed when process generator is finished)
-    //struct Node* current_node = processes.head;
-    //
-
 
     struct Node * previous_head = NULL;//malloc(sizeof(struct Node));
     struct Node * current_head = NULL;
@@ -360,19 +340,16 @@ int RR(int quant)
     {
         if(running_queue.head != NULL && (getClk() - running_queue.head->processInfo.previousstart == time_quantum))
         {
-            //printf("current time is %d\tprocess with id %d has start time %d\n", x, running_queue.head->processInfo.id, running_queue.head->processInfo.starttime);
             struct Node * temp_node = running_queue.head;
             temp_node->processInfo.remainingTime -= time_quantum;
             removeFromQueue(&running_queue, temp_node->processInfo.id );
             
-            //printf("Forked pid remove: %d\n", temp_node -> processInfo.systempid);
-            //printf("Debug current time is %d\n", getClk());
+            
             if(temp_node->processInfo.remainingTime > 0)
             {
                 temp_node ->processInfo.previousstop = getClk();
                 fprintf(schedulerLogFile, "At time %d process %d stopped arr %d total %d remain %d wait %d\n", getClk(), temp_node ->processInfo.id, temp_node ->processInfo.arrivalTime, temp_node ->processInfo.runTime, temp_node ->processInfo.remainingTime, temp_node->processInfo.waitingTime);
                 insertToQueue(&ready_queue, temp_node->processInfo);
-                //kill(temp_node->processInfo.systempid, SIGSTOP);
                 kill(temp_node->processInfo.systempid, SIGUSR1);
             }
             else
@@ -385,15 +362,12 @@ int RR(int quant)
                 fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), temp_node ->processInfo.id, temp_node ->processInfo.arrivalTime, temp_node ->processInfo.runTime, temp_node ->processInfo.remainingTime, temp_node->processInfo.waitingTime, turnaround_time, weighted_ta); 
                 printf("Mem start %d\n", temp_node->processInfo.mem_start);
                 deallocate(temp_node->processInfo.mem_start, temp_node->processInfo.id);
-                print();
+                //print();
                 //printf("Goodbye process %d\n", temp_node -> processInfo.id);
                 final_size -= 1;
                 
                 }
-            //printf("Hellloo\n");
         }
-        //
-        //printf("Hello 2!\n");
         current_head = ready_queue.head;
 
         //Move process from ready state to running state
@@ -406,7 +380,6 @@ int RR(int quant)
 
             
 
-            //printf("Is starteddddd? %d\n", current_head->processInfo.isStarted);
             flag_first_time = current_head->processInfo.isStarted;
             
             
@@ -423,8 +396,7 @@ int RR(int quant)
             previous_head = current_head;
             current_head = ready_queue.head;
 
-            //current_head ->processInfo.isRunning = 1;
-            //printf("Is started? %d\n", previous_head->processInfo.isStarted);
+            
             if(flag_first_time == 0)
             {
 
@@ -443,8 +415,7 @@ int RR(int quant)
                 {
                     previous_head->processInfo.mem_start = mem_start;
                 
-                    print();
-                    //############################
+                    //print();
 
                     pid=fork();
                     
@@ -462,7 +433,7 @@ int RR(int quant)
                         char start_time_param [MAXCHAR];
                         sprintf(start_time_param, "%d", getClk());
                     
-                        return execl("./process.out", "./process.out", id_param, arrival_time_param, running_time_param, start_time_param,(char*)NULL);
+                        return execl("./process.out", "./process.out", running_time_param, start_time_param, id_param, (char*)NULL);
                     }
                     else if(pid == -1)
                     {
@@ -473,22 +444,11 @@ int RR(int quant)
                     else
                     {
                         
-                        //current_head ->processInfo.isRunning = true;
                         previous_head -> processInfo.starttime = getClk();
                         previous_head ->processInfo.waitingTime = getClk() - previous_head->processInfo.arrivalTime;
-                        //printf("Forked pid insert: %d\n", pid);
                         previous_head->processInfo.systempid = pid;
                         fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d\n", getClk(), previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.runTime, previous_head->processInfo.waitingTime);
-                        /*
-                        int mem_start = allocate(previous_head->processInfo.memsize, previous_head->processInfo.id);
-                        printf("Alloc mem start: %d\n", mem_start);
-                        if(1) /////// Check again
-                        {
-                            previous_head->processInfo.mem_start = mem_start;
-                        }
                         
-                        print();
-                        */
                         insertToQueue(&running_queue, previous_head->processInfo);
                         currentProcess = previous_head->processInfo;
                     }
@@ -501,32 +461,20 @@ int RR(int quant)
                 insertToQueue(&running_queue, previous_head->processInfo);
                 kill(previous_head->processInfo.systempid, SIGCONT);
                 currentProcess = previous_head->processInfo;
-                //kill(previous_head->processInfo.systempid, SIGUSR2);
-                //printf("Resume\n");
+                
             }
             
 
         }
 
-        //printf("Hello 3!\n");
-        
-
-       //wait for a second to pass
-       /*
-        while(getClk() - prev_time == 0);
-        x = getClk();
-        prev_time = x;
-        */
         //Condition to exit the loop (will be modified)
         if(running_queue.head == NULL && ready_queue.head == NULL /*&& final_size == 0)*/ && endReceive) 
         {
-            //printf("zzz %d\n", getClk());
             break;
         }
         
 
     }
-    //printf("Hello 4!\n");
 
     struct Node* temp = finished_queue.head;
     int total_waiting = 0;

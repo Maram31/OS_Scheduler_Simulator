@@ -214,6 +214,7 @@ int main(int argc, char * argv[])
 
     // 7. Clear clock resources
     destroyClk(true);
+    return 0;
 }
 
 bool sendProcessToScheduler(struct Process* p, int* msgq_id)

@@ -17,9 +17,9 @@ int main(int agrc, char * argv[])
     signal(SIGUSR1, pause_handler);
     signal(SIGCONT, resume_handler);
 
-    int pid = atoi(argv[1]);
-    int running_time = atoi(argv[3]);
-    int start_time = atoi(argv[4]);
+    int pid = atoi(argv[3]);
+    int running_time = atoi(argv[1]);
+    int start_time = atoi(argv[2]);
     
     //printf("\nProcess with id %d started at %d\n", pid, start_time);
     
