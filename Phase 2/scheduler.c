@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     signal(SIGUSR2, recievingHandler);
 
     initClk();
-    Buddy(128);
+    Buddy(1024);
     //TODO implement the scheduler :)
     //upon termination release the clock resources.
     
