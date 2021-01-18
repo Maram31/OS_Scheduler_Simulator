@@ -416,8 +416,9 @@ void handler(int signum)
         total_weighted_turnaround += weighted_turnaround;
 
         handler_finished = 1;
-        runProcessHPF(clk);
         fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", clk, currentProcess.id,  currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround, weighted_turnaround); 
+        runProcessHPF(clk);
+        
     }
     else if (algorithmNumber == 2)
     {
