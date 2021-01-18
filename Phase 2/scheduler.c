@@ -44,6 +44,9 @@ void handler(int signum);
 void recievingHandler(int signum);
 
 void SRTN();
+void runProcessSRTN(int clk);
+struct Node * ptr_head;
+struct Node * current_process_ptr;
 struct Process previousProcess;
 
 int RR(int quant);
@@ -159,146 +162,97 @@ struct LinkedList ready_queue_SRTN = {NULL, NULL, 0};
 
 void SRTN()
 {
-    initClk();
     int clk = getClk();       // gets time
-    int last_clk = clk-1;
-    printf("SRTN current time is %d\n", clk);
-    struct Node * ptr_head = NULL;
-    struct Node * prev_ptr = NULL;
-    struct Node * curr_ptr = NULL;
+    //int last_clk = clk-1;
+    //printf("SRTN current time is %d\n", clk);
+ 
     while (!endReceive || isEmpty(&ready_queue) == 0 || handler_finished == 0)
     {
         ptr_head = ready_queue.head;
+       
         clk = getClk();
-      
-        if(ptr_head)
+        if(ptr_head != NULL)
         {
-                currentProcess = ready_queue.head->processInfo;
-                curr_ptr = ready_queue.head;
-                //printf("\nCurrent process id is %d", curr_ptr->processInfo.id);
-                
-                char running_time_param[MAXCHAR];
-                sprintf(running_time_param, "%d", curr_ptr->processInfo.runTime);
-                char start_time_param[MAXCHAR];
-                sprintf(start_time_param, "%d", clk); 
-
-                if(curr_ptr->processInfo.isStarted == 0 && prev_ptr && prev_ptr!=curr_ptr)
+            if(busy == 0)
+            {
+                runProcessSRTN(clk);
+            }
+            else 
+            {
+                if(ptr_head->processInfo.remainingTime < currentProcess.runTime-(clk-currentProcess.previousstart))
                 {
-                            curr_ptr->processInfo.waitingTime += getClk() - curr_ptr->processInfo.arrivalTime;
-                            curr_ptr->processInfo.executionTime = getClk() - prev_ptr->processInfo.starttime;
-                            //kill(prev_ptr->processInfo.systempid, SIGUSR1);
-                            curr_ptr->processInfo.starttime = getClk();
-                            prev_ptr = curr_ptr;
-			                printf("\nCondition 1 true for %d", curr_ptr->processInfo.id);
-                            pid_t pid;
-                            pid = fork();
-                            if(pid == 0)
-                            {
-                                printf("\nREmoving");
-                                insert_srtn(&forked_queue, ready_queue.head->processInfo);
-                                remove_head(&ready_queue);  
-                                presentid(&ready_queue);
-
-                                char id_param [MAXCHAR] ; 
-                                sprintf(id_param, "%d",  curr_ptr->processInfo.id);
-                                char running_time_param [MAXCHAR];
-                                sprintf(running_time_param, "%d",  curr_ptr->processInfo.runTime);
-                                char arrival_time_param [MAXCHAR];
-                                sprintf(arrival_time_param, "%d",  curr_ptr->processInfo.arrivalTime);
-                                char start_time_param [MAXCHAR];
-                                sprintf(start_time_param, "%d", getClk());
-                                execl("./process.out", "./process.out", running_time_param, start_time_param, id_param, (char*)NULL);
-                                }
-                                else if (pid == -1)
-                                {
-                                    exit(-1);
-                                }   
-                                else //parent
-                                {
-                                    printf("\nPARENT SETTING");
-                                    currentProcess.systempid = getpid();
-                                    currentProcess.isStarted = 1;
-                                }
+                    runProcessSRTN(clk);
                 }
-                else if (!prev_ptr && curr_ptr->processInfo.isStarted == 0)       // if not busy,  no prevptr
-                {
-                    //busy = 1;
-                    
-                    printf("\nCondition 2 true for %d",  curr_ptr->processInfo.id); 
-                    printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-                    prev_ptr = curr_ptr;
-                    //EITHER WAY --->> FORK A NEW PROCESS
-                    pid_t pid;
-                    pid = fork();
-                    if(pid == 0)
-                    {
-                        printf("\nREmoving");
-                        insert_srtn(&forked_queue, ready_queue.head->processInfo);
-                        printf("\nFinished removing");
-                        remove_head(&ready_queue);
-                        presentid(&ready_queue);
-                        printf("\nProcess with id %d is forked", curr_ptr->processInfo.id );
-
-                        char id_param [MAXCHAR] ; 
-                        sprintf(id_param, "%d", curr_ptr->processInfo.id);
-                        char running_time_param [MAXCHAR];
-                        sprintf(running_time_param, "%d", curr_ptr->processInfo.runTime);
-                        char arrival_time_param [MAXCHAR];
-                        sprintf(arrival_time_param, "%d", curr_ptr->processInfo.arrivalTime);
-                        char start_time_param [MAXCHAR];
-                        sprintf(start_time_param, "%d", getClk());
-                        
-                        fprintf(schedulerLogFile, "At time %d process %d started \n", getClk(),prev_ptr->processInfo.id);     
-                        execl("./process.out", "./process.out", running_time_param, start_time_param, id_param, (char*)NULL);
-                    }
-                    else if (pid == -1)
-                    {
-                        exit(-1);
-                    }   
-                    else //parent
-                    {
-                        printf("\n--PARENT SETTING");
-                        curr_ptr->processInfo.systempid = getpid();
-                        curr_ptr->processInfo.isStarted = 1;
-                    }
-                }
-                else if (curr_ptr->processInfo.isStarted == 1 && prev_ptr ==curr_ptr)       // process has been forked before 
-                {
-                	//printf("\nCondition 3 true for %d",  curr_ptr->processInfo.id);
-                    if(last_clk != clk) curr_ptr->processInfo.executionTime++;
-
-                    if(curr_ptr->processInfo.executionTime == curr_ptr->processInfo.runTime)
-                    {
-                        printf("\nProces %d finished at time %d",curr_ptr->processInfo.id, clk);
-                        int turnaround_time = getClk() - prev_ptr->processInfo.arrivalTime;
-                        float weighted_ta = (float)turnaround_time / prev_ptr->processInfo.executionTime;  
-                        prev_ptr->processInfo.weightedTA = weighted_ta;
-                        prev_ptr->processInfo.remainingTime = 0;
-                        prev_ptr = NULL;
-                        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(),prev_ptr->processInfo.id, curr_ptr->processInfo.arrivalTime, curr_ptr->processInfo.executionTime, curr_ptr->processInfo.remainingTime, curr_ptr->processInfo.waitingTime, turnaround_time, weighted_ta);     
-                        //remove_head(&ready_queue);
-                    }
-                   
-                }
-                else if (!prev_ptr)
-                {
-                    printf("\nCondition 4 true for %d",  curr_ptr->processInfo.id);	
-                    printf("Process %d continues at time %d", curr_ptr->processInfo.id, clk);
-                    kill(currentProcess.systempid, SIGCONT);
-                }
+            }
+            
         }
-        if (last_clk !=clk)
-            last_clk++;
-    }   
-    //To make the scheduler waits until all processes terminates
-    pid_t wpid;
-    int status = 0;
-    while ((wpid = wait(&status)) > 0); 
+    } 
+    RRstats();
 
-    printf("Out of SRTN\n");
 }
 
+void runProcessSRTN(int clk)
+{
+    struct Process prev_ptr;
+    bool flag = false;
+    handler_finished = 0;
+    if(busy == 1)
+    {
+        flag = true; 
+        prev_ptr = currentProcess;
+        kill(prev_ptr.systempid, SIGUSR1);
+        prev_ptr.previousstop = clk;
+        prev_ptr.remainingTime = currentProcess.remainingTime - (clk - currentProcess.previousstart);
+        fprintf(schedulerLogFile, "At time %d process %d stopped arr %d total %d remain %d wait %d\n", clk, prev_ptr.id, prev_ptr.arrivalTime, prev_ptr.runTime,prev_ptr.remainingTime, prev_ptr.waitingTime);
+        insert_srtn(&ready_queue, prev_ptr);
+    }
+    currentProcess = ready_queue.head->processInfo;
+    busy = 1;
+    if(currentProcess.isStarted == 0)
+    {
+        currentProcess.isStarted = 1;
+        //printf("%d started forking\n", ptr_head->processInfo.id);
+        //total_runtime += currentProcess.runTime;
+        currentProcess.waitingTime = clk - currentProcess.arrivalTime;
+        total_waiting += currentProcess.waitingTime;
+        currentProcess.previousstart = clk;
+        processes_count++;
+        pid_t pid = fork();
+        if (pid == 0)
+        {
+            char running_time_param[MAXCHAR];
+            sprintf(running_time_param, "%d", currentProcess.runTime);
+            char start_time_param[MAXCHAR];
+            sprintf(start_time_param, "%d", clk);
+            char id_param [MAXCHAR] ; 
+            sprintf(id_param, "%d", currentProcess.id);
+            
+            execl("./process.out", "./process.out", running_time_param, start_time_param, id_param,(char *)NULL);
+        }
+        else if (pid == -1)
+        {
+            //printf("\nProcess Initialization Error\n");
+            exit(-1);
+        }
+        else
+        {
+            fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.runTime, currentProcess.waitingTime);
+            currentProcess.systempid = pid;
+            remove_head(&ready_queue); 
+        }
+    }
+    else
+    {
+        remove_head(&ready_queue);
+        currentProcess.previousstart = clk;
+        currentProcess.waitingTime += clk - (currentProcess.previousstop) ;
+        fprintf(schedulerLogFile, "At time %d process %d resumed arr %d total %d remain %d wait %d\n", clk,currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime);
+        kill(currentProcess.systempid, SIGCONT);
+    }
+    
 
+      
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void HPF()
@@ -421,7 +375,7 @@ void handler(int signum)
         runProcessHPF(clk);
         fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", clk, currentProcess.id,  currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround, weighted_turnaround); 
     }
-    /*else if (algorithmNumber == 2)
+    else if (algorithmNumber == 2)
     {
         handler_finished = 1;
         int turnaround_time = getClk() - currentProcess.arrivalTime;
@@ -662,8 +616,8 @@ void recievingHandler(int signum)
                     }
                     else if (algorithmNumber == 2)
                     {
+                        message.P.isStarted = 0;
                         insert_srtn(&ready_queue, message.P);
-                        //presentid(&ready_queue);
                     }
                     else if(algorithmNumber == 3)
                     {
