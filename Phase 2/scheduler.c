@@ -409,8 +409,6 @@ void handler(int signum)
     
     if (algorithmNumber == 1)
     {
-        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, 0);
-        deallocate(currentProcess.mem_start, currentProcess.id);
         int turnaround = clk - currentProcess.arrivalTime;
         float weighted_turnaround = (float)turnaround/(float)currentProcess.runTime;
 
@@ -421,9 +419,27 @@ void handler(int signum)
 
         handler_finished = 1;
         runProcessHPF(clk);
+        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", clk, currentProcess.id,  currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround, weighted_turnaround); 
     }
-    else if (algorithmNumber == 2)
-        raise(SIGUSR1);
+    /*else if (algorithmNumber == 2)
+    {
+        handler_finished = 1;
+        int turnaround_time = getClk() - currentProcess.arrivalTime;
+        float weighted_ta = (float)turnaround_time / currentProcess.runTime;  
+        currentProcess.weightedTA = weighted_ta;
+        busy = 0;
+        insertToQueue(&finished_queue, currentProcess);
+        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", clk, currentProcess.id,  currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround_time, weighted_ta); 
+    }/* Has an alternative way in the function below , so both are okay
+    else if (algorithmNumber == 3)
+    {
+        int turnaround_time = getClk() - currentProcess.arrivalTime;
+        float weighted_ta = (float)turnaround_time / currentProcess .runTime;  
+        currentProcess.weightedTA = weighted_ta;
+        currentProcess.remainingTime = 0;
+        insertToQueue(&finished_queue, currentProcess);
+        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), temp_node ->processInfo.id, temp_node ->processInfo.arrivalTime, temp_node ->processInfo.runTime, temp_node ->processInfo.remainingTime, temp_node->processInfo.waitingTime, turnaround_time, weighted_ta); 
+    }*/
     signal(SIGUSR1, handler);
 }
 

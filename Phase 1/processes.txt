@@ -1,6 +1,12 @@
 #id arrival runtime priority
+<<<<<<< HEAD
 1	1	4	5
 2	2	3	4
 3	3	1	3
 4	4	5	2
 5	5	2	2
+=======
+1	3	5	10
+2	4	2	5
+3	8	2	3
+>>>>>>> 5fc91b76c3bf277c441ac9c71db26dcab68871d7
