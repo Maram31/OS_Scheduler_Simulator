@@ -134,9 +134,6 @@ int main(int argc, char *argv[])
 }
 struct LinkedList ready_queue_SRTN = {NULL, NULL, 0};
 
-//  3andi moshkela eno at a certain tie it will send the Success:end message
-// w na lesa ma5alastesh filling the ready queue
-// plus bey7ot men 3ando process el id bta3ha 0? Weird? 
 void SRTN()
 {
     initClk();
@@ -154,25 +151,12 @@ void SRTN()
       
         if(ptr_head)
         {
-                currentProcess = ready_queue.head->processInfo;
+                //currentProcess = ready_queue.head->processInfo;
                 curr_ptr = ready_queue.head;
     
                 //BUBBLE SORT EVERYTIME CURRENT HEAD IS NOT AS PREVIOUS
                 //EDIT PROCESS.C TO DECREMENT REMINING TIME EVERY SECOND TAMAM  >>>>>>>> ha3temed 3ala da mohem gedan
-
-                // PUT IN CORRECT PLACE
-                 char running_time_param[MAXCHAR];
-                sprintf(running_time_param, "%d", curr_ptr->processInfo.runTime);
-                char start_time_param[MAXCHAR];
-                sprintf(start_time_param, "%d", clk); 
-                char id_param [MAXCHAR] ; 
-                sprintf(id_param, "%d", currentProcess.id);
-                char algo_no [MAXCHAR];
-                sprintf(algo_no, "%d", algorithmNumber);
-                
-                execl("./process.out", "./process.out", running_time_param, start_time_param, id_param,algo_no,(char *)NULL);
-
-
+                // PUT IN CORRECT PLACE   
                 if(curr_ptr->processInfo.isStarted == 0)
                 {
                     if(busy == 0)
@@ -186,11 +170,17 @@ void SRTN()
                     }
 
                     prev_ptr = curr_ptr;
-                    pid_t pid;
 
+                    pid_t pid;
                     if(pid == 0)
                     {
-                        
+                        char running_time_param[MAXCHAR];
+                        sprintf(running_time_param, "%d", curr_ptr->processInfo.runTime);
+                        char start_time_param[MAXCHAR];
+                        sprintf(start_time_param, "%d", clk); 
+                        char id_param [MAXCHAR] ; 
+                        sprintf(id_param, "%d", currentProcess.id);
+                        execl("./process.out", "./process.out", running_time_param, start_time_param, id_param,(char *)NULL);   
                     } 
                     else if (pid == -1)
                     {
@@ -199,11 +189,9 @@ void SRTN()
                     else
                     {
                         curr_ptr->processInfo.systempid = pid;
+                        curr_ptr->processInfo.starttime = getClk();
+                        curr_ptr->processInfo.waitingTime = getClk() - curr_ptr->processInfo.arrivalTime;
                     }
-                    
-
-
-                    
                 }
                 else
                 {
