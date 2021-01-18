@@ -214,6 +214,7 @@ int main(int argc, char * argv[])
 
     // 7. Clear clock resources
     destroyClk(true);
+    //sleep(3);
     return 0;
 }
 
