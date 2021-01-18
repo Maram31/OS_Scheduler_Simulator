@@ -3,14 +3,27 @@
 #include <stdlib.h> 
 #include "headers.h"
 
+/*
+struct Node {
+    struct Process processInfo;
+    struct Node * next;
+    struct Node * previous;
+};
+
+struct LinkedList {
+	struct Node * head;
+	struct Node * tail;
+    int size;
+};
+  */
+    
     
 // Inserts a process to the most suited position in the list according to its priority
-void insertWithPriority(struct LinkedList* ProcessesList, struct Process newProcess) 
-{       
+void insertWithPriority(struct LinkedList* ProcessesList, struct Process newProcess) {
+        
     struct Node * newProcessNode;
     newProcessNode = (struct Node*)malloc(sizeof(struct Node));
     newProcessNode->processInfo = newProcess;
-    newProcessNode->processInfo.isStarted = 0;
         
     if (ProcessesList->head == NULL) {                                                                       // linked list is empty so new process is inserted first in list
         ProcessesList->head = newProcessNode;
@@ -93,70 +106,74 @@ void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess)
     struct Node * newProcessNode;
     newProcessNode = (struct Node*)malloc(sizeof(struct Node));
     newProcessNode->processInfo = newProcess;
-    newProcessNode->processInfo.isStarted =0;
-    newProcessNode->processInfo.executionTime = 0;
-    //printf("Isertion function\n");
-   // printf("Process with id %d is beeing inserted\n", newProcessNode->processInfo.id);
+
     // if no nodes yet  
     if (ProcessesList->head == NULL) 
     {                                                                       // linked list is empty so new process is inserted first in list
         ProcessesList->head = newProcessNode;
         ProcessesList->size++;
         printf("\nProcess with id %d is successfully inserted!", newProcess.id);
-        bubbleSort_srtn(&ProcessesList);
         return;
     }
 
     // if gonna insert at head
-    if (newProcess.remainingTime < ProcessesList->head->processInfo.remainingTime) {                                   // new process has the highest priority and should be inserted first in linked list
+    if (newProcess.runTime < ProcessesList->head->processInfo.runTime) {                                   // new process has the highest priority and should be inserted first in linked list
         newProcessNode->next = ProcessesList->head;
         ProcessesList->head = newProcessNode;
         ProcessesList->size++;
         printf("\nProcess with id %d is successfully inserted!", newProcess.id);
-        bubbleSort_srtn(&ProcessesList);
         return;
     } 
 
-    if (newProcess.remainingTime > ProcessesList->head->processInfo.remainingTime)
+    if (newProcess.runTime > ProcessesList->head->processInfo.runTime)
     {                                                                                       // traverse the linked list to find best position to insert the new process in
         struct Node * ptr;                                                  // create node pointer to traverse the linked list
         ptr = ProcessesList->head;                                                      // initially pointing to beginning of linked list
-        struct Node * ptr_before = ptr;
+
         // if 1 node and insert not at head
         if(!ptr->next)
         {
             ProcessesList->head->next = newProcessNode;  
             ProcessesList->size++;
             printf("\nProcess with id %d is successfully inserted!", newProcess.id);
-            bubbleSort_srtn(&ProcessesList);
             return;
         }
         int inserted = 0;
         while (ptr->next) 
-        {                 
-            ptr_before = ptr;                               
-            if (newProcess.runTime >= ptr->processInfo.remainingTime &&  newProcess.runTime <= ptr->next->processInfo.remainingTime) 
+        {                                                
+            if (newProcess.runTime >= ptr->processInfo.runTime &&  newProcess.runTime <= ptr->next->processInfo.runTime ) 
             {  
                 struct Node * temp = newProcessNode;            //create a temp node points to new process
                 temp->next = ptr->next;                         // now make the new pcs point to next of the ptr
                 ptr->next = temp;                               // then make the next of the ptr be the temp
                 ProcessesList->size++;
                 printf("\nProcess with id %d is successfully inserted!", newProcess.id);
-                bubbleSort_srtn(&ProcessesList);
                 return;
             }
 
+            //reached el end, insert w 5alas at the end
+            /*
+            if(!ptr->next)
+            {
+                struct Node * ptrtemp = ptr;
+                ptrtemp->next = newProcessNode;
+                newProcessNode->next = NULL;
+                ProcessesList->size++;
+                printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+                return;
+            }
+            */
             ptr = ptr->next;
         }
 
         // didnt return therefore reached end of list
-        struct Node * ptrtemp = ptr_before;
+        struct Node * ptrtemp = ptr;
         ptrtemp->next = newProcessNode;
         newProcessNode->next = NULL;
         ProcessesList->size++;
-        printf("\nProcess with id %d is successfully inserted!", newProcess.id);
-        bubbleSort_srtn(&ProcessesList);
+        //printf("\nProcess with id %d is successfully inserted!", newProcess.id);
         return;
+
 
     }
  }
@@ -172,8 +189,6 @@ void presentid(struct LinkedList * L) {
             N = N->next;
         } while(N != NULL);
     }
-    else 
-    printf("Empty!\n");
 }
 
 
@@ -222,7 +237,7 @@ void bubbleSort_srtn(struct LinkedList *L)
         while (ptr1->next != lptr) 
         { 
             /*HERE EXECUTION TIME IS USED IN CASE OF SRTN, CAN BE SWAPPED FOR PRIORITY*/
-            if (ptr1->processInfo.remainingTime > ptr1->next->processInfo.remainingTime) //If process closer to head bigger than its next, swap
+            if (ptr1->processInfo.runTime > ptr1->next->processInfo.runTime) //If process closer to head bigger than its next, swap
             {  
                 swapnodes(ptr1, ptr1->next); 
                 swapped = 1; 
