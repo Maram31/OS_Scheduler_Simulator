@@ -89,7 +89,7 @@ int main(int argc, char * argv[])
         perror("Error in create message queue");
         exit(-1);
     }
-    printf("Process Generator: Message Queue ID = %d\n", msgq_id);
+    //printf("Process Generator: Message Queue ID = %d\n", msgq_id);
 
     // 1. Read the input files.
     readFromFileAndFillList(&processes);
@@ -118,7 +118,7 @@ int main(int argc, char * argv[])
     // 3. Initiate and create the scheduler and clock processes.
     pid=fork();
     if(pid == 0){
-        printf("\nClock Initialization Succes with pid = %d\n", getpid()); 
+        //printf("\nClock Initialization Succes with pid = %d\n", getpid()); 
         return execl("./clk.out", "./clk.out", (char*) NULL);
     }
     else if(pid == -1)
@@ -131,7 +131,7 @@ int main(int argc, char * argv[])
         pid=fork();
         if(pid == 0){
             
-            printf("\nScheduler Initialization Succes with pid = %d\n", getpid());
+            //printf("\nScheduler Initialization Succes with pid = %d\n", getpid());
             if(algorithmNumber == 1) return execl("./scheduler.out", "./scheduler.out", "1",(char*) NULL);    
             else if(algorithmNumber == 2) return execl("./scheduler.out", "./scheduler.out", "2",(char*) NULL);   
             else if(algorithmNumber == 3) return execl("./scheduler.out", "./scheduler.out", "3", quantumBuffer,(char*) NULL);
@@ -148,7 +148,7 @@ int main(int argc, char * argv[])
 
     // To get time use this
     int clk = getClk();
-    clk = getClk();
+    //clk = getClk();
     printf("current time is %d\n", clk);
     
     // TODO Generation Main Loop
@@ -208,7 +208,7 @@ int main(int argc, char * argv[])
         sid = wait(&stat_loc);
   	    if(!(stat_loc & 0x00FF))
   	        printf("\nA child with pid %d terminated with exit code %d\n", sid, stat_loc>>8);
-        if(sid == pid) break;
+        if(sid == pid) break;   
     }
     msgctl(msgq_id, IPC_RMID, (struct msqid_ds *)0);
 
@@ -235,6 +235,8 @@ bool sendProcessToScheduler(struct Process* p, int* msgq_id)
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
+    printf("bye\n");
+
 }
 
 bool startsWith(const char *a, const char *b)

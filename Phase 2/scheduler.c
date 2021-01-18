@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     signal(SIGUSR2, recievingHandler);
 
     initClk();
-    Buddy(128);
+    Buddy(1024);
     //TODO implement the scheduler :)
     //upon termination release the clock resources.
     
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
         perror("Error in create message queue");
         exit(-1);
     }
-    printf("Scheduler: Message Queue ID = %d\n", msgq_id);
+    //printf("Scheduler: Message Queue ID = %d\n", msgq_id);
 
     //To make the scheduler waits until all processes terminates
     pid_t wpid;
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     
     fclose(schedulerLogFile);
     fclose(schedulerPerfFile);
-    //destroyClk(true);
+    destroyClk(false);
     return 1;
 }
 struct LinkedList ready_queue_SRTN = {NULL, NULL, 0};
@@ -331,7 +331,7 @@ void handler(int signum)
 {
     //printf("Inside handler\n");
     busy = 0;
-    int clk = getClk();
+    int clk = 9;//getClk();
 
 
         
@@ -378,7 +378,7 @@ int RR(int quant)
     
     
     //Debug
-    printf("RR current time is %d\n", x);
+    //printf("RR current time is %d\n", x);
     //
 
     //Variable to loop every 1 second
@@ -430,7 +430,8 @@ int RR(int quant)
         //Move process from ready state to running state
         if(current_head != NULL && running_queue.head == NULL)//&& running_queue.size == 0)// && (start_time_prev_process == -1 || getClk() - start_time_prev_process >= time_quantum))
         {
-            start_time_prev_process = getClk(); //will be removed
+            int time = getClk();
+            start_time_prev_process = time; //will be removed
 
             
             removeFromQueue(&ready_queue, current_head-> processInfo.id );
@@ -440,14 +441,14 @@ int RR(int quant)
             flag_first_time = current_head->processInfo.isStarted;
             
             
-            current_head -> processInfo.starttime = getClk();   //will be removed
+            current_head -> processInfo.starttime = time;   //will be removed
             if(current_head ->processInfo.remainingTime - time_quantum < 0)
             {
-                current_head -> processInfo.previousstart = getClk() + current_head ->processInfo.remainingTime - time_quantum;
+                current_head -> processInfo.previousstart = time + current_head ->processInfo.remainingTime - time_quantum;
 
             }
             else
-                current_head -> processInfo.previousstart = getClk() ;
+                current_head -> processInfo.previousstart = time ;
             current_head -> processInfo.isStarted = 1;
             
             previous_head = current_head;
@@ -488,7 +489,7 @@ int RR(int quant)
                         sprintf(arrival_time_param, "%d", previous_head -> processInfo.arrivalTime);
                         //
                         char start_time_param [MAXCHAR];
-                        sprintf(start_time_param, "%d", getClk());
+                        sprintf(start_time_param, "%d", time);
                     
                         return execl("./process.out", "./process.out", running_time_param, start_time_param, id_param, (char*)NULL);
                     }
@@ -501,10 +502,10 @@ int RR(int quant)
                     else
                     {
                         
-                        previous_head -> processInfo.starttime = getClk();
-                        previous_head ->processInfo.waitingTime = getClk() - previous_head->processInfo.arrivalTime;
+                        previous_head -> processInfo.starttime = time;
+                        previous_head ->processInfo.waitingTime = time - previous_head->processInfo.arrivalTime;
                         previous_head->processInfo.systempid = pid;
-                        fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d\n", getClk(), previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.runTime, previous_head->processInfo.waitingTime);
+                        fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d\n", time, previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.runTime, previous_head->processInfo.waitingTime);
                         
                         insertToQueue(&running_queue, previous_head->processInfo);
                         currentProcess = previous_head->processInfo;
@@ -513,8 +514,8 @@ int RR(int quant)
             }
             else
             {
-                previous_head->processInfo.waitingTime += getClk() - (previous_head->processInfo.previousstop) ;
-                fprintf(schedulerLogFile, "At time %d process %d resumed arr %d total %d remain %d wait %d\n", getClk(), previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.remainingTime, previous_head->processInfo.waitingTime);
+                previous_head->processInfo.waitingTime += time - (previous_head->processInfo.previousstop) ;
+                fprintf(schedulerLogFile, "At time %d process %d resumed arr %d total %d remain %d wait %d\n", time, previous_head ->processInfo.id, previous_head ->processInfo.arrivalTime, previous_head ->processInfo.runTime, previous_head ->processInfo.remainingTime, previous_head->processInfo.waitingTime);
                 insertToQueue(&running_queue, previous_head->processInfo);
                 kill(previous_head->processInfo.systempid, SIGCONT);
                 currentProcess = previous_head->processInfo;
@@ -694,7 +695,7 @@ int allocate(int s, int process_id)
 	{
 		
 		iterator = NULL;
-		printf("Sorry, failed to allocate memory\n");
+		//printf("Sorry, failed to allocate memory\n");
 		return_value = -1;
         //return - 1;
 	}
@@ -735,7 +736,7 @@ int allocate(int s, int process_id)
 		// i.e., no memory block available
 		if (i >= size)
 		{
-			printf("Sorry, failed to allocate memory\n");
+			//printf("Sorry, failed to allocate memory\n");
             return_value = -1;
 			//return -1;
 		}

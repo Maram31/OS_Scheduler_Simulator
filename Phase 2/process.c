@@ -17,7 +17,7 @@ int main(int agrc, char * argv[])
     signal(SIGUSR1, pause_handler);
     signal(SIGCONT, resume_handler);
 
-    int pid = atoi(argv[3]);
+    int pid = atoi(argv[3]); ///To be removed
     int running_time = atoi(argv[1]);
     int start_time = atoi(argv[2]);
     
