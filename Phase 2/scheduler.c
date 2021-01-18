@@ -212,7 +212,7 @@ void runProcessSRTN(int clk)
     if(tempProcess.isStarted == 0)
     {
         int mem_start = allocate(tempProcess.memsize, tempProcess.id);
-        printf("\n%d is mem start for process %d with memsize %d", mem_start, tempProcess.id, tempProcess.memsize);
+        //printf("\n%d is mem start for process %d with memsize %d", mem_start, tempProcess.id, tempProcess.memsize);
         if(mem_start == -1) 
         {
             //printf("Memory not enough");
