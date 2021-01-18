@@ -19,6 +19,7 @@ int busy = 0;
 int handler_finished = 0;
 
 struct Process currentProcess;
+struct Process previousProcess;
 short algorithmNumber;
 
 float *WTA;    //array to store weighted turnaround for every process
@@ -64,6 +65,7 @@ FILE *schedulerPerfFile;
 struct LinkedList running_queue = {NULL, NULL, 0};
 struct LinkedList finished_queue = {NULL, NULL, 0};
 
+struct LinkedList forked_queue = {NULL, NULL, 0};
 //Will be removed
 //Initial version of Round Robin scheduling algorithm with no process communication
 void finish_handler(int signum);
@@ -134,27 +136,154 @@ int main(int argc, char *argv[])
 }
 struct LinkedList ready_queue_SRTN = {NULL, NULL, 0};
 
-//  3andi moshkela eno at a certain tie it will send the Success:end message
-// w na lesa ma5alastesh filling the ready queue
-// plus bey7ot men 3ando process el id bta3ha 0? Weird? 
 void SRTN()
 {
-    struct LinkedList ProcessList = {NULL, NULL, 0};
     initClk();
-    int x = getClk();       // gets time
-    printf("current time is %d\n", x);
+    int clk = getClk();       // gets time
+    int last_clk = clk;
+    printf("SRTN current time is %d\n", clk);
+    struct Node * ptr_head = NULL;
+    struct Node * prev_ptr = NULL;
+    struct Node * curr_ptr = NULL;
 
-    pid_t pid_of_running;
-
-    while (!endReceive /*|| !isEmpty(&ready_queue_SRTN)*/)
+    while (!endReceive || isEmpty(&ready_queue)== 0 || handler_finished== 0)
     {
+        ptr_head = ready_queue.head;
+        clk = getClk();
+        runSRTN(getClk());
+        if(ptr_head)
+        {
+                //currentProcess = ready_queue.head->processInfo;
+                curr_ptr = ready_queue.head;
 
-    }      
+                runSRTN(clk);
+
+                //BUBBLE SORT EVERYTIME CURRENT HEAD IS NOT AS PREVIOUS
+                //EDIT PROCESS.C TO DECREMENT REMINING TIME EVERY SECOND TAMAM  >>>>>>>> ha3temed 3ala da mohem gedan
+                // PUT IN CORRECT PLACE   
+                if(curr_ptr->processInfo.isStarted == 0)
+                {
+                    if(busy == 0)
+                    {
+                        busy  = 1;
+                       
+                    }
+                    else
+                    {
+                        
+                    }
+
+                    prev_ptr = curr_ptr;
+                    pid_t pid;
+                    if(pid == 0)
+                    {
+                        char running_time_param[MAXCHAR];
+                        sprintf(running_time_param, "%d", curr_ptr->processInfo.runTime);
+                        char start_time_param[MAXCHAR];
+                        sprintf(start_time_param, "%d", clk); 
+                        char id_param [MAXCHAR] ; 
+                        sprintf(id_param, "%d", currentProcess.id);
+                        execl("./process.out", "./process.out", running_time_param, start_time_param, id_param,(char *)NULL);   
+                    } 
+                    else if (pid == -1)
+                    {
+                        exit(-1);
+                    }
+                    else
+                    {
+                        curr_ptr->processInfo.systempid = pid;
+                        curr_ptr->processInfo.starttime = getClk();
+                        curr_ptr->processInfo.waitingTime = getClk() - curr_ptr->processInfo.arrivalTime;
+                    }
+                }
+                else
+                {
+                    if(busy == 0)               // + 1 more if else, if busy with my process or with other
+                    {
+
+                    }
+                    else if (busy == 1 && curr_ptr!=prev_ptr )         
+                    {
+
+                    }   
+                    else if(busy == 1 && curr_ptr==prev_ptr)
+                    {
+
+                    } 
+                }
+                
+
+
+        }   
+      
+        while(getClk() - last_clk == 0)
+        {
+            //sleep();
+        }
+    }
     //To make the scheduler waits until all processes terminates
+    printf("DO YOU EXIT");
     pid_t wpid;
     int status = 0;
-    while ((wpid = wait(&status)) > 0);
-    presentid(&ready_queue_SRTN);
+    while ((wpid = wait(&status)) > 0); 
+
+    printf("Out of SRTN\n");
+}
+
+
+void runSRTN(int clk)
+{
+    if (isEmpty(&ready_queue)!=1 )
+    {
+        busy = 1;
+        handler_finished = 0;
+        previousProcess= currentProcess;
+        currentProcess = ready_queue.head->processInfo;
+        
+        if(currentProcess.isStarted == 0)
+        {
+            //total_runtime += currentProcess.runTime;
+            currentProcess.waitingTime = clk - currentProcess.arrivalTime;
+            total_waiting += currentProcess.waitingTime;
+            processes_count++;
+
+            char running_time_param[MAXCHAR];
+            sprintf(running_time_param, "%d", currentProcess.runTime);
+            char start_time_param[MAXCHAR];
+            sprintf(start_time_param, "%d", clk);
+            
+            
+            pid_t pid = fork();
+            if (pid == 0)
+            {
+                currentProcess.systempid = getpid();
+                execl("./process_mh.out", "./process_mh.out", running_time_param, start_time_param, (char *)NULL);
+            }
+            else if (pid == -1)
+            {
+                //printf("\nProcess Initialization Error\n");
+                exit(-1);
+            }
+            else
+            {
+                //>>>>>>>>>>>>insert_srtn(&forked_queue);
+                remove_head(&ready_queue);
+                fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.runTime, currentProcess.waitingTime);
+            }
+        }
+        else
+        {
+            // continue
+            kill(currentProcess.systempid,SIGCONT);
+            
+            if ( == NULL)
+            {
+                /* code */
+            }
+            
+        }
+        
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -551,7 +680,7 @@ void recievingHandler(int signum)
                     }
                     else if (algorithmNumber == 2)
                     {
-                        insert_srtn(&ready_queue_SRTN, message.P);
+                        insert_srtn(&ready_queue, message.P);
                     }
                     else if(algorithmNumber == 3)
                     {
