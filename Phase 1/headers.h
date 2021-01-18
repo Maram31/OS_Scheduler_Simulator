@@ -27,6 +27,9 @@ typedef short bool;
 
 struct Process              //struct to hold the information of each process
 {
+    //Memory
+    int memsize;
+    //
     int id;
     int arrivalTime; //
     int priority;
@@ -38,6 +41,7 @@ struct Process              //struct to hold the information of each process
     int waitingTime;    //
     int previousstop;
     float weightedTA;
+    int mem_start;
     pid_t systempid;    //
 
     bool isFinished;    

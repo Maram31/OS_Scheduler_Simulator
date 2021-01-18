@@ -106,13 +106,13 @@ void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess)
     struct Node * newProcessNode;
     newProcessNode = (struct Node*)malloc(sizeof(struct Node));
     newProcessNode->processInfo = newProcess;
-
+    //newProcessNode->processInfo.isStarted =0;
     // if no nodes yet  
     if (ProcessesList->head == NULL) 
     {                                                                       // linked list is empty so new process is inserted first in list
         ProcessesList->head = newProcessNode;
         ProcessesList->size++;
-        printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+        //printf("\nProcess with id %d is successfully inserted!", newProcess.id);
         return;
     }
 
@@ -121,7 +121,7 @@ void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess)
         newProcessNode->next = ProcessesList->head;
         ProcessesList->head = newProcessNode;
         ProcessesList->size++;
-        printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+        //printf("\nProcess with id %d is successfully inserted!", newProcess.id);
         return;
     } 
 
@@ -135,7 +135,7 @@ void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess)
         {
             ProcessesList->head->next = newProcessNode;  
             ProcessesList->size++;
-            printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+            //printf("\nProcess with id %d is successfully inserted!", newProcess.id);
             return;
         }
         int inserted = 0;
@@ -147,7 +147,7 @@ void insert_srtn(struct LinkedList* ProcessesList, struct Process newProcess)
                 temp->next = ptr->next;                         // now make the new pcs point to next of the ptr
                 ptr->next = temp;                               // then make the next of the ptr be the temp
                 ProcessesList->size++;
-                printf("\nProcess with id %d is successfully inserted!", newProcess.id);
+                //printf("\nProcess with id %d is successfully inserted!", newProcess.id);
                 return;
             }
 
@@ -212,7 +212,7 @@ void remove_head(struct LinkedList * L) {
         if(L->head != NULL) {
             L->head->previous = NULL;
         }
-        free(N);
+        //free(N);
     }
 }
 
