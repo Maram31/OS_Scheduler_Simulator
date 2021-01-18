@@ -169,13 +169,9 @@ void SRTN()
             }
             
         }
-    }   
-    //To make the scheduler waits until all processes terminates
-    pid_t wpid;
-    int status = 0;
-    while ((wpid = wait(&status)) > 0); 
+    } 
+    RRstats();
 
-    //printf("Out of SRTN\n");
 }
 
 void runProcessSRTN(int clk)
@@ -187,8 +183,8 @@ void runProcessSRTN(int clk)
     {
         flag = true; 
         prev_ptr = currentProcess;
-
         kill(prev_ptr.systempid, SIGUSR1);
+        prev_ptr.previousstop = clk;
         prev_ptr.remainingTime = currentProcess.remainingTime - (clk - currentProcess.previousstart);
         fprintf(schedulerLogFile, "At time %d process %d stopped arr %d total %d remain %d wait %d\n", clk, prev_ptr.id, prev_ptr.arrivalTime, prev_ptr.runTime,prev_ptr.remainingTime, prev_ptr.waitingTime);
         insert_srtn(&ready_queue, prev_ptr);
@@ -225,15 +221,14 @@ void runProcessSRTN(int clk)
         {
             fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.runTime, currentProcess.waitingTime);
             currentProcess.systempid = pid;
-            remove_head(&ready_queue);
-          
+            remove_head(&ready_queue); 
         }
-
     }
     else
     {
         remove_head(&ready_queue);
         currentProcess.previousstart = clk;
+        currentProcess.waitingTime += clk - (currentProcess.previousstop) ;
         fprintf(schedulerLogFile, "At time %d process %d resumed arr %d total %d remain %d wait %d\n", clk,currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime);
         kill(currentProcess.systempid, SIGCONT);
     }
@@ -260,8 +255,6 @@ void HPF()
         runProcessHPF(getClk());
     }
     //To make the scheduler waits until all processes terminates
-    pid_t wpid;
-    int status = 0;
 
     utilization = (total_runtime / getClk()) * 100;
     float average_waiting = (float)total_waiting/(float)processes_count;
@@ -285,7 +278,6 @@ void HPF()
     fprintf(schedulerPerfFile, "Std WTA = %0.2f\n", std_average_weighted_turnaround);  
 
 
-    while ((wpid = wait(&status)) > 0);
 }
 void runProcessHPF(int clk)
 {
@@ -341,7 +333,6 @@ void handler(int signum)
     
     if (algorithmNumber == 1)
     {
-        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, 0);
         int turnaround = clk - currentProcess.arrivalTime;
         float weighted_turnaround = (float)turnaround/(float)currentProcess.runTime;
 
@@ -352,13 +343,17 @@ void handler(int signum)
 
         handler_finished = 1;
         runProcessHPF(clk);
+        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", clk, currentProcess.id,  currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround, weighted_turnaround); 
     }
     else if (algorithmNumber == 2)
     {
         handler_finished = 1;
-        //printf("Termination\n");
+        int turnaround_time = getClk() - currentProcess.arrivalTime;
+        float weighted_ta = (float)turnaround_time / currentProcess.runTime;  
+        currentProcess.weightedTA = weighted_ta;
         busy = 0;
-        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, 0);
+        insertToQueue(&finished_queue, currentProcess);
+        fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", clk, currentProcess.id,  currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround_time, weighted_ta); 
     }
     signal(SIGUSR1, handler);
 }
