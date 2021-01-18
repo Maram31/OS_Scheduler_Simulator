@@ -19,6 +19,7 @@ int busy = 0;
 int handler_finished = 0;
 
 struct Process currentProcess;
+struct Process previousProcess;
 short algorithmNumber;
 
 float *WTA;    //array to store weighted turnaround for every process
@@ -64,6 +65,7 @@ FILE *schedulerPerfFile;
 struct LinkedList running_queue = {NULL, NULL, 0};
 struct LinkedList finished_queue = {NULL, NULL, 0};
 
+struct LinkedList forked_queue = {NULL, NULL, 0};
 //Will be removed
 //Initial version of Round Robin scheduling algorithm with no process communication
 void finish_handler(int signum);
@@ -148,12 +150,14 @@ void SRTN()
     {
         ptr_head = ready_queue.head;
         clk = getClk();
-      
+        runSRTN(getClk());
         if(ptr_head)
         {
                 //currentProcess = ready_queue.head->processInfo;
                 curr_ptr = ready_queue.head;
-    
+
+                runSRTN(clk);
+
                 //BUBBLE SORT EVERYTIME CURRENT HEAD IS NOT AS PREVIOUS
                 //EDIT PROCESS.C TO DECREMENT REMINING TIME EVERY SECOND TAMAM  >>>>>>>> ha3temed 3ala da mohem gedan
                 // PUT IN CORRECT PLACE   
@@ -170,7 +174,6 @@ void SRTN()
                     }
 
                     prev_ptr = curr_ptr;
-
                     pid_t pid;
                     if(pid == 0)
                     {
@@ -227,6 +230,61 @@ void SRTN()
     printf("Out of SRTN\n");
 }
 
+
+void runSRTN(int clk)
+{
+    if (isEmpty(&ready_queue)!=1 )
+    {
+        busy = 1;
+        handler_finished = 0;
+        previousProcess= currentProcess;
+        currentProcess = ready_queue.head->processInfo;
+        
+        if(currentProcess.isStarted == 0)
+        {
+            //total_runtime += currentProcess.runTime;
+            currentProcess.waitingTime = clk - currentProcess.arrivalTime;
+            total_waiting += currentProcess.waitingTime;
+            processes_count++;
+
+            char running_time_param[MAXCHAR];
+            sprintf(running_time_param, "%d", currentProcess.runTime);
+            char start_time_param[MAXCHAR];
+            sprintf(start_time_param, "%d", clk);
+            
+            
+            pid_t pid = fork();
+            if (pid == 0)
+            {
+                currentProcess.systempid = getpid();
+                execl("./process_mh.out", "./process_mh.out", running_time_param, start_time_param, (char *)NULL);
+            }
+            else if (pid == -1)
+            {
+                //printf("\nProcess Initialization Error\n");
+                exit(-1);
+            }
+            else
+            {
+                //>>>>>>>>>>>>insert_srtn(&forked_queue);
+                remove_head(&ready_queue);
+                fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.runTime, currentProcess.waitingTime);
+            }
+        }
+        else
+        {
+            // continue
+            kill(currentProcess.systempid,SIGCONT);
+            
+            if ( == NULL)
+            {
+                /* code */
+            }
+            
+        }
+        
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -622,7 +680,7 @@ void recievingHandler(int signum)
                     }
                     else if (algorithmNumber == 2)
                     {
-                        insert_srtn(&ready_queue_SRTN, message.P);
+                        insert_srtn(&ready_queue, message.P);
                     }
                     else if(algorithmNumber == 3)
                     {
