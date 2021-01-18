@@ -179,7 +179,7 @@ void SRTN()
             }
             else 
             {
-                if(ptr_head->processInfo.remainingTime < currentProcess.runTime-(clk-currentProcess.previousstart))
+                if(ptr_head->processInfo.remainingTime < currentProcess.remainingTime-(clk-currentProcess.previousstart))
                 {
                     runProcessSRTN(clk);
                 }
