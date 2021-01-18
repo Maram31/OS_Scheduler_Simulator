@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     algorithmNumber = atoi(argv[1]);
     signal(SIGUSR1, handler);
     signal(SIGUSR2, recievingHandler);
-    signal(SIGSTOP, recievingHandler);
+    //signal(SIGSTOP, recievingHandler);
 
     initClk();
     Buddy(1024);
@@ -456,19 +456,7 @@ void handler(int signum)
 {
     //printf("Inside handler\n");
     busy = 0;
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-    int clk = 9;//getClk();
-=======
     int clk = getClk();
->>>>>>> Stashed changes
-
-
-        
-    //fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", getClk(), currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround_time, weighted_ta); 
-=======
-    int clk = getClk();
->>>>>>> 7de5559cf3631bf8f05d479b652336be8cf77815
     
     if (algorithmNumber == 1)
     {
