@@ -22,6 +22,7 @@ int busy = 0;
 int handler_finished = 0;
 
 struct Process currentProcess;
+struct Process tempProcess; // nd 56
 short algorithmNumber;
 
 float *WTA;    //array to store weighted turnaround for every process
@@ -194,9 +195,8 @@ void SRTN()
 void runProcessSRTN(int clk)
 {
     struct Process prev_ptr;
-    bool flag = false;
-    handler_finished = 0;
-    if(busy == 1)
+    //printf("\nIn run");
+   /* if(busy == 1)
     {
         flag = true; 
         prev_ptr = currentProcess;
@@ -207,42 +207,86 @@ void runProcessSRTN(int clk)
         insert_srtn(&ready_queue, prev_ptr);
     }
     currentProcess = ready_queue.head->processInfo;
-    busy = 1;
-    if(currentProcess.isStarted == 0)
+    busy = 1;*/
+    tempProcess = ready_queue.head->processInfo;
+    if(tempProcess.isStarted == 0)
     {
-        currentProcess.isStarted = 1;
-        //printf("%d started forking\n", ptr_head->processInfo.id);
-        //total_runtime += currentProcess.runTime;
-        currentProcess.waitingTime = clk - currentProcess.arrivalTime;
-        total_waiting += currentProcess.waitingTime;
-        currentProcess.previousstart = clk;
-        processes_count++;
-        pid_t pid = fork();
-        if (pid == 0)
+        int mem_start = allocate(tempProcess.memsize, tempProcess.id);
+        printf("\n%d is mem start for process %d with memsize %d", mem_start, tempProcess.id, tempProcess.memsize);
+        if(mem_start == -1) 
         {
-            char running_time_param[MAXCHAR];
-            sprintf(running_time_param, "%d", currentProcess.runTime);
-            char start_time_param[MAXCHAR];
-            sprintf(start_time_param, "%d", clk);
-            char id_param [MAXCHAR] ; 
-            sprintf(id_param, "%d", currentProcess.id);
-            
-            execl("./process.out", "./process.out", running_time_param, start_time_param, id_param,(char *)NULL);
-        }
-        else if (pid == -1)
-        {
-            //printf("\nProcess Initialization Error\n");
-            exit(-1);
+            //printf("Memory not enough");
+            tempProcess.mem_start = mem_start;
+            tempProcess.previousstart = -1;
+            tempProcess.isStarted = 0;
         }
         else
         {
-            fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.runTime, currentProcess.waitingTime);
-            currentProcess.systempid = pid;
-            remove_head(&ready_queue); 
-        }
+            //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            bool flag = false;
+            handler_finished = 0;
+            if(busy == 1)
+            {
+                flag = true; 
+                prev_ptr = currentProcess;
+                kill(prev_ptr.systempid, SIGUSR1);
+                prev_ptr.previousstop = clk;
+                prev_ptr.remainingTime = currentProcess.remainingTime - (clk - currentProcess.previousstart);
+                fprintf(schedulerLogFile, "At time %d process %d stopped arr %d total %d remain %d wait %d\n", clk, prev_ptr.id, prev_ptr.arrivalTime, prev_ptr.runTime,prev_ptr.remainingTime, prev_ptr.waitingTime);
+                insert_srtn(&ready_queue, prev_ptr);
+            }
+            currentProcess = ready_queue.head->processInfo;
+            busy = 1;
+
+            //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+            currentProcess.mem_start = mem_start;
+            currentProcess.isStarted = 1;
+            currentProcess.waitingTime = clk - currentProcess.arrivalTime;
+            total_waiting += currentProcess.waitingTime;
+            currentProcess.previousstart = clk;
+            processes_count++;
+            pid_t pid = fork();
+            //printf("\nProcess with id %d forked", currentProcess.id);
+            if (pid == 0)
+            {
+                char running_time_param[MAXCHAR];
+                sprintf(running_time_param, "%d", currentProcess.runTime);
+                char start_time_param[MAXCHAR];
+                sprintf(start_time_param, "%d", clk);
+                char id_param [MAXCHAR] ; 
+                sprintf(id_param, "%d", currentProcess.id);       
+                execl("./process.out", "./process.out", running_time_param, start_time_param, id_param,(char *)NULL);
+            }
+            else if (pid == -1)
+            {
+                exit(-1);
+            }
+            else
+            {
+                fprintf(schedulerLogFile, "At time %d process %d started arr %d total %d remain %d wait %d \n", clk, currentProcess.id, currentProcess.arrivalTime, currentProcess.runTime, currentProcess.runTime, currentProcess.waitingTime);
+                currentProcess.systempid = pid;
+                remove_head(&ready_queue); 
+            }
+        }   
     }
     else
     {
+        bool flag = false;
+        handler_finished = 0;
+        if(busy == 1)
+        {
+            flag = true; 
+            prev_ptr = currentProcess;
+            kill(prev_ptr.systempid, SIGUSR1);
+            prev_ptr.previousstop = clk;
+            prev_ptr.remainingTime = currentProcess.remainingTime - (clk - currentProcess.previousstart);
+            fprintf(schedulerLogFile, "At time %d process %d stopped arr %d total %d remain %d wait %d\n", clk, prev_ptr.id, prev_ptr.arrivalTime, prev_ptr.runTime,prev_ptr.remainingTime, prev_ptr.waitingTime);
+            insert_srtn(&ready_queue, prev_ptr);
+        }
+        currentProcess = ready_queue.head->processInfo;
+        busy = 1;
+
         remove_head(&ready_queue);
         currentProcess.previousstart = clk;
         currentProcess.waitingTime += clk - (currentProcess.previousstop) ;
@@ -363,7 +407,6 @@ void handler(int signum)
     
     if (algorithmNumber == 1)
     {
-        deallocate(currentProcess.mem_start, currentProcess.id);
         int turnaround = clk - currentProcess.arrivalTime;
         float weighted_turnaround = (float)turnaround/(float)currentProcess.runTime;
 
@@ -384,10 +427,12 @@ void handler(int signum)
         currentProcess.weightedTA = weighted_ta;
         busy = 0;
         insertToQueue(&finished_queue, currentProcess);
+        deallocate(currentProcess.mem_start, currentProcess.id);
         fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", clk, currentProcess.id,  currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround_time, weighted_ta); 
     }/* Has an alternative way in the function below , so both are okay
     else if (algorithmNumber == 3)
     {
+        deallocate(currentProcess.mem_start, currentProcess.id);
         int turnaround_time = getClk() - currentProcess.arrivalTime;
         float weighted_ta = (float)turnaround_time / currentProcess .runTime;  
         currentProcess.weightedTA = weighted_ta;
