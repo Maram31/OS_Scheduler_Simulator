@@ -139,23 +139,106 @@ struct LinkedList ready_queue_SRTN = {NULL, NULL, 0};
 // plus bey7ot men 3ando process el id bta3ha 0? Weird? 
 void SRTN()
 {
-    struct LinkedList ProcessList = {NULL, NULL, 0};
     initClk();
-    int x = getClk();       // gets time
-    printf("current time is %d\n", x);
+    int clk = getClk();       // gets time
+    int last_clk = clk;
+    printf("SRTN current time is %d\n", clk);
+    struct Node * ptr_head = NULL;
+    struct Node * prev_ptr = NULL;
+    struct Node * curr_ptr = NULL;
 
-    pid_t pid_of_running;
-
-    while (!endReceive /*|| !isEmpty(&ready_queue_SRTN)*/)
+    while (!endReceive || isEmpty(&ready_queue)== 0 || handler_finished== 0)
     {
+        ptr_head = ready_queue.head;
+        clk = getClk();
+      
+        if(ptr_head)
+        {
+                currentProcess = ready_queue.head->processInfo;
+                curr_ptr = ready_queue.head;
+    
+                //BUBBLE SORT EVERYTIME CURRENT HEAD IS NOT AS PREVIOUS
+                //EDIT PROCESS.C TO DECREMENT REMINING TIME EVERY SECOND TAMAM  >>>>>>>> ha3temed 3ala da mohem gedan
 
-    }      
+                // PUT IN CORRECT PLACE
+                 char running_time_param[MAXCHAR];
+                sprintf(running_time_param, "%d", curr_ptr->processInfo.runTime);
+                char start_time_param[MAXCHAR];
+                sprintf(start_time_param, "%d", clk); 
+                char id_param [MAXCHAR] ; 
+                sprintf(id_param, "%d", currentProcess.id);
+                char algo_no [MAXCHAR];
+                sprintf(algo_no, "%d", algorithmNumber);
+                
+                execl("./process.out", "./process.out", running_time_param, start_time_param, id_param,algo_no,(char *)NULL);
+
+
+                if(curr_ptr->processInfo.isStarted == 0)
+                {
+                    if(busy == 0)
+                    {
+                        busy  = 1;
+                       
+                    }
+                    else
+                    {
+                        
+                    }
+
+                    prev_ptr = curr_ptr;
+                    pid_t pid;
+
+                    if(pid == 0)
+                    {
+                        
+                    } 
+                    else if (pid == -1)
+                    {
+                        exit(-1);
+                    }
+                    else
+                    {
+                        curr_ptr->processInfo.systempid = pid;
+                    }
+                    
+
+
+                    
+                }
+                else
+                {
+                    if(busy == 0)               // + 1 more if else, if busy with my process or with other
+                    {
+
+                    }
+                    else if (busy == 1 && curr_ptr!=prev_ptr )         
+                    {
+
+                    }   
+                    else if(busy == 1 && curr_ptr==prev_ptr)
+                    {
+
+                    } 
+                }
+                
+
+
+        }   
+      
+        while(getClk() - last_clk == 0)
+        {
+            //sleep();
+        }
+    }
     //To make the scheduler waits until all processes terminates
+    printf("DO YOU EXIT");
     pid_t wpid;
     int status = 0;
-    while ((wpid = wait(&status)) > 0);
-    presentid(&ready_queue_SRTN);
+    while ((wpid = wait(&status)) > 0); 
+
+    printf("Out of SRTN\n");
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
