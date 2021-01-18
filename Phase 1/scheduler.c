@@ -255,7 +255,8 @@ void HPF()
         runProcessHPF(getClk());
     }
     //To make the scheduler waits until all processes terminates
-
+    RRstats();
+    /*
     utilization = (total_runtime / getClk()) * 100;
     float average_waiting = (float)total_waiting/(float)processes_count;
 
@@ -276,7 +277,7 @@ void HPF()
     fprintf(schedulerPerfFile, "Avg WTA = %0.2f\n", average_weighted_turnaround);
     fprintf(schedulerPerfFile, "Avg Waiting = %0.2f\n", average_waiting);  
     fprintf(schedulerPerfFile, "Std WTA = %0.2f\n", std_average_weighted_turnaround);  
-
+    */
 
 }
 void runProcessHPF(int clk)
@@ -335,13 +336,15 @@ void handler(int signum)
     {
         int turnaround = clk - currentProcess.arrivalTime;
         float weighted_turnaround = (float)turnaround/(float)currentProcess.runTime;
+        currentProcess.weightedTA = weighted_turnaround;
 
-        WTA[processes_count-1] = weighted_turnaround;
+        //WTA[processes_count-1] = weighted_turnaround;
 
-        total_turnaround += turnaround;
-        total_weighted_turnaround += weighted_turnaround;
+        //total_turnaround += turnaround;
+        //total_weighted_turnaround += weighted_turnaround;
 
         handler_finished = 1;
+        insertToQueue(&finished_queue, currentProcess);
         fprintf(schedulerLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.2f\n", clk, currentProcess.id,  currentProcess.arrivalTime, currentProcess.runTime, currentProcess.remainingTime, currentProcess.waitingTime, turnaround, weighted_turnaround);
         runProcessHPF(clk);
          
