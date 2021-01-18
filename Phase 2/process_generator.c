@@ -1,69 +1,16 @@
-#include "headers.h"
-#define MAXCHAR 300
 /*
-struct Node                 //struct to gold the information of each Node and a pointer to the next and previous Nodes in the LinkedList
-{
-    struct Process processInfo;
-    struct Node * next;
-    struct Node * previous;
-};
-
-struct LinkedList           //likedlist struct
-{
-	struct Node * head;
-	struct Node * tail;
-    int size;
-};
+* Author : Heba Ali
 */
+#include "headers.h"
+#include "linked_list.h"
+#define MAXCHAR 300
+
 struct msgbuff
 {
     long mtype;
     struct Process P;
 };
 
-void addNodeToLikedlistEnd(struct LinkedList* list, struct Process processToAdd)
-{
-    struct Node * nodeToAdd = (struct Node *) malloc(sizeof(struct Node));  //create new node and assign the process to it.
-    nodeToAdd->processInfo = processToAdd;
-    nodeToAdd->next = NULL;
-
-    if(list->head == NULL)
-    {
-        list->head = nodeToAdd;
-        list->tail = nodeToAdd;
-    }
-    else
-    {
-        list->tail->next = nodeToAdd;
-        nodeToAdd->previous = list->tail;
-        list->tail = list->tail->next;
-    }
-
-    list->size ++;
-}
-
-
-void removeHeadNodeFromLikedlist(struct LinkedList* list)
-{
-    if(list->head == NULL)
-    {
-        return;
-    }
-    else if(list->head->next == NULL)
-    {
-        free(list->head);
-        list->head = NULL;
-        list->tail = NULL;
-    }
-    else
-    {
-        struct Node * tempNode = (struct Node *) malloc(sizeof(struct Node));  //create new node and assign the process to it.
-        tempNode = list->head;
-        list->head = list->head->next;
-        free(tempNode);
-    }
-    list->size --;
-}
 
 
 void clearResources(int);
@@ -74,13 +21,15 @@ bool sendProcessToScheduler(struct Process* p, int* msgq_id);
 
 int main(int argc, char * argv[])
 {
-    pid_t pid;
+    //Signals
     signal(SIGINT, clearResources);
+
+    //Variables
+    pid_t pid;
     struct LinkedList processes = {NULL, NULL, 0};
-    
     key_t key_id;
     int msgq_id;
-
+    //Key & Message queue
     key_id = ftok("keyfile", 65);
     msgq_id = msgget(key_id, 0666 | IPC_CREAT);
 
@@ -89,24 +38,9 @@ int main(int argc, char * argv[])
         perror("Error in create message queue");
         exit(-1);
     }
-    //printf("Process Generator: Message Queue ID = %d\n", msgq_id);
 
     // 1. Read the input files.
     readFromFileAndFillList(&processes);
-   
-    //Debugg//////////////////
-    /*
-    struct Node* node_debug = processes.head;  
-    while (node_debug != NULL)
-    {
-        printf("Process with id %d , arrival time %d , runtime %d , priority %d , memsize %d \n", node_debug->processInfo.id,  node_debug->processInfo.arrivalTime,  node_debug->processInfo.runTime,  node_debug->processInfo.priority,  node_debug->processInfo.memsize);
-        //Done
-        node_debug = node_debug->next;
-    }
-
-    while(1);  
-    */
-    ////////////////
 
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     short algorithmNumber;
@@ -148,7 +82,6 @@ int main(int argc, char * argv[])
 
     // To get time use this
     int clk = getClk();
-    //clk = getClk();
     printf("current time is %d\n", clk);
     
     // TODO Generation Main Loop

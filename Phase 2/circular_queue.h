@@ -1,54 +1,18 @@
-
+/*
+*Author : Ahmed Osama
+*Circular queue is needed by round robin to work , especially insertion and removal operations
+*/
 #include <stdio.h> 
 #include <stdlib.h> 
 #include "headers.h"
 
-/*
-struct processData
-{
-    int arrivaltime; //
-    int priority;
-    int runningtime; //
-    int starttime;  //
-    int previousstart; //
-    int id; //
-    int executionTime; 
-    int remainingTime;  //
-    int waitingTime;    //
-    int previousstop;
-    float weightedTA;
-    pid_t systempid;    //
 
-    bool isFinished;    
-    bool isReady;
-    bool isRunning;
-    int isStarted;  //
-
-};*/
-
-/*
-struct Node {
-    struct Process processInfo;
-    struct Node * next;
-    struct Node * previous;
-};
-
-struct LinkedList {
-	struct Node * head;
-	struct Node * tail;
-    int size;
-};
-*/
 
 void insertToQueue(struct LinkedList* ProcessesList, struct Process newProcess) {
         
     struct Node * newProcessNode;
     newProcessNode = (struct Node*)malloc(sizeof(struct Node));
     newProcessNode-> processInfo = newProcess;
-
-    //Debug
-    //printf("Is started? %d\n", newProcessNode->processInfo.isStarted);
-    //
 
     if (ProcessesList->head == NULL) {                                                                       // linked list is empty so new process is inserted first in list
         ProcessesList->head = newProcessNode;

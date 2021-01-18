@@ -1,3 +1,7 @@
+/*Author: Ahmed Osama
+*   Needed by the buddy memory algorithm to allocate and free the memory
+*   Similar to C++ map but with complexity o(n) instead of o(1)
+*/
 #include <stdlib.h>
 #include <stdio.h>
 
