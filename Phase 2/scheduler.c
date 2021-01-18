@@ -363,6 +363,7 @@ void handler(int signum)
     
     if (algorithmNumber == 1)
     {
+        deallocate(currentProcess.mem_start, currentProcess.id);
         int turnaround = clk - currentProcess.arrivalTime;
         float weighted_turnaround = (float)turnaround/(float)currentProcess.runTime;
 
