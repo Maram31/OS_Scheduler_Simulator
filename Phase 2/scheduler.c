@@ -892,7 +892,4 @@ void deallocate(int id, int process_id)
 }
 //###############
 
-void pauser(int signum)
-{
 
-}
