@@ -9,8 +9,7 @@
 #include <sys/msg.h>
 #include <signal.h>
 
-/* Size of shared buffer */
-#define BUF_SIZE 3
+#define BUF_SIZE 3                /* size of shared buffer */
 
 #define MUTEX 0
 #define FULL 1
@@ -18,15 +17,24 @@
 
 int semid;
 
+void handler(int signum);
+int shmid;
+int shmid_num;
+int shmid_resources;
+int shmid_producers_count;
+int shmid_add;
+void *shmaddr_resources;
+void *shmaddr_producers_count;
+
 union semun {
-	int val; /*	Value	for	SETVAL	*/
-	struct semid_ds *buf;		/*	Buffer	for	IPC_STAT,	IPC_SET	*/
-	unsigned short *array;	/*	Array	for	GETALL,	SETALL	*/
-	struct seminfo *__buf;	/*	Buffer	for	IPC_INFO (Linux-specific)	*/
+	int val;                                        /* value for SETVAL */
+	struct semid_ds *buf;	                	    /* buffer for IPC_STAT, IPC_SET */
+	unsigned short *array;	                        /* array for GETALL, SETALL */
+	struct seminfo *__buf;	                        /* buffer for IPC_INFO */
 };
 
-int sem_create(int nsems) { 
-	int  id;
+int sem_create(int nsems) {                              /* create semaphore */
+	int  id;    
 	key_t key = 1234;
 	int semflg = IPC_CREAT | 0666;
 	id = semget(key, nsems, semflg);
@@ -38,7 +46,7 @@ int sem_create(int nsems) {
 	return id;
 }
 
-void sem_initialise(int semno, int val) {
+void sem_initialise(int semno, int val) {                /* initialise semaphore */
 	union semun un;
 	un.val = val;
 	if(semctl(semid, semno, SETVAL, un) < 0)
@@ -48,7 +56,7 @@ void sem_initialise(int semno, int val) {
 	}
 }
 
-void down(int semno) {
+void down(int semno) {                                   /* acquire resource */
 	struct sembuf buf;
 	buf.sem_num = semno;
 	buf.sem_op = -1;
@@ -59,7 +67,7 @@ void down(int semno) {
 	}
 }
 
-void up(int semno) {
+void up(int semno) {                                     /* release resource */
 	struct sembuf buf;
 	buf.sem_num = semno;
 	buf.sem_op = 1;
@@ -71,24 +79,14 @@ void up(int semno) {
 	}
 }
 
-
-void handler(int signum);
-int shmid;
-int shmid_num;
-int shmid_resources;
-int shmid_producers_count;
-int shmid_add;
-void *shmaddr_resources;
-void *shmaddr_producers_count;
 int main (int argc, char *argv[])
-{
-   
+{ 
     signal(SIGINT, handler);
     signal(SIGTSTP, handler);
     signal(SIGKILL, handler);
 
     key_t key_id = ftok("keyfile", 80);               
-    shmid_resources = shmget(key_id, sizeof(int), IPC_CREAT | 0644);
+    shmid_resources = shmget(key_id, sizeof(int), IPC_CREAT | 0644);                /* create shared memory for resources */
     printf("shmid_resources: %d\n", shmid_resources);
 
     shmaddr_resources = shmat(shmid_resources, (void *)0, 0);
@@ -99,7 +97,7 @@ int main (int argc, char *argv[])
     }
 
     key_id = ftok("keyfile", 90);               
-    shmid_producers_count = shmget(key_id, sizeof(int), IPC_CREAT | 0644);
+    shmid_producers_count = shmget(key_id, sizeof(int), IPC_CREAT | 0644);          /* create shared memory for producers' count */
     printf("shmid_producers_count: %d\n", shmid_producers_count);
 
     shmaddr_producers_count = shmat(shmid_producers_count, (void *)0, 0);
@@ -122,19 +120,19 @@ int main (int argc, char *argv[])
     }
 
     key_id = ftok("keyfile", 65);               
-    shmid = shmget(key_id, BUF_SIZE*sizeof(int), IPC_CREAT | 0644);
+    shmid = shmget(key_id, BUF_SIZE*sizeof(int), IPC_CREAT | 0644);                  /* create shared memory for buffer */
     printf("shmid: %d\n", shmid);
 
     key_id = ftok("keyfile", 60);               
-    shmid_num = shmget(key_id, sizeof(int), IPC_CREAT | 0644);
+    shmid_num = shmget(key_id, sizeof(int), IPC_CREAT | 0644);                      
     printf("shmid_num: %d\n", shmid_num);
     
     semid = sem_create(3);
-    if((*(int*)shmaddr_resources) == 0)
+    if((*(int*)shmaddr_resources) == 0)                                               /* creating 3 semaphores */
     {
-        sem_initialise(MUTEX, 1);
-        sem_initialise(FULL, 0);
-        sem_initialise(EMPTY, BUF_SIZE);
+        sem_initialise(MUTEX, 1);                                                     /* semaphore mutex intialised to value of 1 */
+        sem_initialise(FULL, 0);                                                      /* semaphore full intialised to value of 0 */
+        sem_initialise(EMPTY, BUF_SIZE);                                              /* semaphore empty intialised to value of BUF_SIZE */
     }
     void *shmaddr = shmat(shmid, (void *)0, 0);
     if (shmaddr == (void*)-1)
@@ -154,31 +152,31 @@ int main (int argc, char *argv[])
 
     int i = 100 * (*(int*)shmaddr_producers_count);
     printf("Producer %d\n", i);
-    while(1)
+    while(1)                                                                    /* infinite loop */
     {
             if((*(int*)shmaddr_num) < BUF_SIZE)
            {
-                down(EMPTY);
+                down(EMPTY);                                                    /* decrement count of empty slots */
                 sleep(rand()%10+1);
-                down(MUTEX);
+                down(MUTEX);                                                    /* enter critical section */
 
-                int add = (*(int*)shmaddr_add);
+                int add = (*(int*)shmaddr_add);                         
                 (*(int*)shmaddr_num) ++;
-                (*((int*)shmaddr+ add)) = i ++;
-                printf("Producer: message sent with value %d\n", i-1);
+                (*((int*)shmaddr+ add)) = i ++;                                 /* add item to buffer */
+                printf("Producer: message sent with value %d\n", i-1);          /* produce item */
                 add = (add+1) % BUF_SIZE;
 
                 int j;
-                for(j = 0; j<BUF_SIZE; j++)
+                for(j = 0; j<BUF_SIZE; j++)                                     /* print out buffer contents */
                 {
                     printf("%d\t", (*((int*)shmaddr+ j)));
                 }
                 printf("\n");
 
                 (*(int*)shmaddr_add) = add;
-                up(MUTEX);
-                up(FULL);
-           }
+                up(MUTEX);                                                      /* leave critical section */
+                up(FULL);                                                       /* increment count of full slots */
+           }        
         
     }
 
@@ -190,7 +188,7 @@ void handler(int signum)
     (*(int*)shmaddr_resources) --;
     (*(int*)shmaddr_producers_count) --;
 
-    if((*(int*)shmaddr_resources) == 0)
+    if((*(int*)shmaddr_resources) == 0)                                         /* clearing all resources if no one is using it anymore */
     {
         shmctl(shmid, IPC_RMID, (struct shmid_ds *)0);
         shmctl(shmid_num, IPC_RMID, (struct shmid_ds *)0);
